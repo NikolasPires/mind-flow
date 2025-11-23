@@ -18,6 +18,7 @@ import { PrismaPsicologoMapper } from "src/database/prisma/mappers/PrismaPsicolo
 import { CreatePacienteUseCase } from "./useCases/createUserUseCase/create-paciente.use-case";
 import { GetUserProfileUseCase } from "./useCases/getUserProfileUseCase/get-user-profile.use-case";
 import { UpdateUserProfileUseCase } from "./useCases/updateUserProfileUseCase/update-user-profile.use-case";
+import { CloudinaryService } from "../services/cloudinaryService";
 
 @Module({
     imports: [DatabaseModule],
@@ -28,6 +29,7 @@ import { UpdateUserProfileUseCase } from "./useCases/updateUserProfileUseCase/up
         CreatePacienteWithPsicologoUseCase,
         ListPacientesUseCase,
         EncryptionService,
+        CloudinaryService,
         GetPacienteProfileUseCase,
         GetUserProfileUseCase,
         UpdateUserProfileUseCase,

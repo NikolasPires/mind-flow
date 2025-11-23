@@ -3,116 +3,135 @@ import { PrismaService } from "src/database/prisma/prisma.service";
 import { EncryptionService } from "src/modules/services/encryptionService";
 import { UpdateUserDto } from "../../dto/update-user.dto";
 import { UpdatePsicologoDto } from "../../dto/update-psicologo.dto";
+import { CloudinaryService } from "src/modules/services/cloudinaryService";
+
+const extractPublicId = (url: string | null | undefined): string | null => {
+    if (!url || !url.includes('/upload/')) return null;
+    const parts = url.split('/upload/');
+    const resourcePath = parts[1];
+    const idMatch = resourcePath.match(/v\d+\/(.+?)(\.\w+)?$/);
+    return idMatch ? idMatch[1] : null;
+};
 
 @Injectable()
 export class UpdateUserProfileUseCase {
-  constructor(
-    private prisma: PrismaService,
-    private encryptionService: EncryptionService,
-  ) {}
+    constructor(
+        private prisma: PrismaService,
+        private encryptionService: EncryptionService,
+        private cloudinaryService: CloudinaryService,
+    ) {}
 
-  async execute(userId: string, userData: UpdateUserDto, profileData?: UpdatePsicologoDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        psicologo: true,
-        paciente: true,
-      },
-    });
+    async execute(userId: string, userData: UpdateUserDto, profileData?: UpdatePsicologoDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                psicologo: true,
+                paciente: true,
+            },
+        });
 
-    if (!user) {
-      throw new NotFoundException("Usuário não encontrado");
-    }
+        if (!user) {
+            throw new NotFoundException("Usuário não encontrado");
+        }
 
-    // Preparar dados para atualização do User
-    const userUpdate: any = {};
+        const oldPhotoUrl = user.photo_url;
+        let newPhotoUrl: string | undefined = userData.photo_url;
 
-    if (userData.name) {
-      userUpdate.name = this.encryptionService.encrypt(userData.name);
-    }
+        if (newPhotoUrl && newPhotoUrl.startsWith('data:')) {
+            const uploadResult = await this.cloudinaryService.uploadImage(newPhotoUrl);
+            newPhotoUrl = uploadResult.url; 
+        }
 
-    if (userData.email) {
-      // Se mudar email, precisa atualizar hash também
-      const { createHash } = require('crypto');
-      const emailHash = createHash('sha256')
-        .update(userData.email)
-        .digest('hex');
-      userUpdate.email = this.encryptionService.encrypt(userData.email);
-      userUpdate.emailHash = emailHash;
-    }
+        const isPhotoUpdated = newPhotoUrl !== undefined && newPhotoUrl !== oldPhotoUrl;
+        if (isPhotoUpdated && oldPhotoUrl) {
+            const publicId = extractPublicId(oldPhotoUrl);
+            if (publicId) {
+                await this.cloudinaryService.deleteImage(publicId); 
+            }
+        }
+        
+        const userUpdate: any = {};
+        
+        if (newPhotoUrl !== undefined) {
+            userUpdate.photo_url = newPhotoUrl === '' ? null : newPhotoUrl;
+        }
 
-    if (userData.phone !== undefined) {
-      userUpdate.phone = userData.phone;
-    }
+        if (userData.name) {
+            userUpdate.name = this.encryptionService.encrypt(userData.name);
+        }
 
-    if (userData.photo_url !== undefined) {
-      userUpdate.photo_url = userData.photo_url;
-    }
+        if (userData.email) {
+            const { createHash } = require('crypto');
+            const emailHash = createHash('sha256')
+                .update(userData.email)
+                .digest('hex');
+            userUpdate.email = this.encryptionService.encrypt(userData.email);
+            userUpdate.emailHash = emailHash;
+        }
 
-    // Atualizar User
-    const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: userUpdate,
-    });
+        if (userData.phone !== undefined) {
+            userUpdate.phone = userData.phone;
+        }
 
-    // Atualizar perfil específico se fornecido
-    if (profileData && user.role === 'PSICOLOGO' && user.psicologo) {
-      const psicologoUpdate: any = {};
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: userUpdate,
+        });
 
-      if (profileData.bio !== undefined) {
-        psicologoUpdate.bio = profileData.bio;
-      }
+        if (profileData && user.role === 'PSICOLOGO' && user.psicologo) {
+            const psicologoUpdate: any = {};
 
-      if (profileData.schedule_settings !== undefined) {
-        psicologoUpdate.schedule_settings = profileData.schedule_settings;
-      }
+            if (profileData.bio !== undefined) {
+                psicologoUpdate.bio = profileData.bio;
+            }
 
-      await this.prisma.psicologo.update({
-        where: { userId },
-        data: psicologoUpdate,
-      });
-    }
+            if (profileData.schedule_settings !== undefined) {
+                psicologoUpdate.schedule_settings = profileData.schedule_settings;
+            }
 
-    // Buscar dados atualizados completos (com perfil)
-    const updatedUserWithProfile = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        psicologo: true,
-        paciente: true,
-      },
-    });
+            await this.prisma.psicologo.update({
+                where: { userId },
+                data: psicologoUpdate,
+            });
+        }
 
-    if (!updatedUserWithProfile) {
-      throw new NotFoundException("Usuário não encontrado após atualização");
-    }
+        const updatedUserWithProfile = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                psicologo: true,
+                paciente: true,
+            },
+        });
 
-    // Descriptografar antes de retornar
-    let finalUser: any = { ...updatedUserWithProfile };
-    try {
-      if (finalUser.name) finalUser.name = this.encryptionService.decrypt(finalUser.name);
-      if (finalUser.email) finalUser.email = this.encryptionService.decrypt(finalUser.email);
+        if (!updatedUserWithProfile) {
+            throw new NotFoundException("Usuário não encontrado após atualização");
+        }
 
-      if (finalUser.psicologo) {
-        finalUser.psicologo = {
-          ...finalUser.psicologo,
-          crp: this.encryptionService.decrypt(finalUser.psicologo.crp),
+        let finalUser: any = { ...updatedUserWithProfile };
+        try {
+            if (finalUser.name) finalUser.name = this.encryptionService.decrypt(finalUser.name);
+            if (finalUser.email) finalUser.email = this.encryptionService.decrypt(finalUser.email);
+
+            if (finalUser.psicologo) {
+                finalUser.psicologo = {
+                    ...finalUser.psicologo,
+                    crp: this.encryptionService.decrypt(finalUser.psicologo.crp),
+                };
+            }
+
+            if (finalUser.paciente && finalUser.paciente.cpf) {
+                finalUser.paciente = {
+                    ...finalUser.paciente,
+                    cpf: this.encryptionService.decrypt(finalUser.paciente.cpf),
+                };
+            }
+        } catch (e) {
+            console.warn("Falha ao descriptografar retorno:", e);
+        }
+
+        return {
+            message: "Dados atualizados com sucesso",
+            user: finalUser,
         };
-      }
-
-      if (finalUser.paciente && finalUser.paciente.cpf) {
-        finalUser.paciente = {
-          ...finalUser.paciente,
-          cpf: this.encryptionService.decrypt(finalUser.paciente.cpf),
-        };
-      }
-    } catch (e) {
-      console.warn("Falha ao descriptografar retorno:", e);
     }
-
-    return {
-      message: "Dados atualizados com sucesso",
-      user: finalUser,
-    };
-  }
 }
-
