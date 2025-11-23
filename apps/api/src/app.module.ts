@@ -10,10 +10,11 @@ import { PacienteModule } from './modules/paciente/paciente.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwtAuth.guard';
 import { ConfigModule } from '@nestjs/config';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 @Module({
   imports: [ConfigModule.forRoot({
       isGlobal: true, 
-    }), DatabaseModule, UserModule, AuthModule, ConsultaModule, TranscricaoModule,PacienteModule],
+    }), DatabaseModule, UserModule, AuthModule, ConsultaModule, TranscricaoModule,PacienteModule, DashboardModule],
   controllers: [AppController],
   providers: [
     AppService,
