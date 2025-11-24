@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import styles from '../styles/Dashboard.module.css';
+import { getSession } from 'next-auth/react';
 
 interface Paciente {
   id: string;
@@ -30,45 +31,46 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchDashboard() {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem('token'); // ajuste a chave do token do seu app
-        if (!token) {
-          throw new Error('Usuário não autenticado');
-        }
+  async function fetchDashboard() {
+    setIsLoading(true);
+    try {
+      const session = await getSession();
 
-        const res = await fetch('http://localhost:3001/dashboard/summary', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`Erro ao buscar dashboard: ${res.status} ${text}`);
-        }
-
-        const data = await res.json();
-        setTodayCount(data.todayCount ?? 0);
-        setAgendaHoje(data.todayAgenda ?? []);
-        setPacientesRecentes(
-          (data.recentPatients ?? []).map((p: any) => ({
-            id: p.user.id,
-            name: p.user.name,
-            email: p.user.email,
-          })),
-        );
-      } catch (err: any) {
-        setError(err.message ?? 'Erro desconhecido');
-      } finally {
-        setIsLoading(false);
+      if (!session?.accessToken) {
+        throw new Error('Usuário não autenticado');
       }
-    }
 
-    fetchDashboard();
-  }, []);
+      const res = await fetch('http://localhost:3001/dashboard/summary', {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Erro ao buscar dashboard: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      setTodayCount(data.todayCount ?? 0);
+      setAgendaHoje(data.todayAgenda ?? []);
+      setPacientesRecentes(
+        (data.recentPatients ?? []).map((p: any) => ({
+          id: p.user.id,
+          name: p.user.name,
+          email: p.user.email,
+        })),
+      );
+    } catch (err: any) {
+      setError(err.message ?? 'Erro desconhecido');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  fetchDashboard();
+}, []);
 
   const renderPacientesCard = () => {
     if (isLoading) return <p>Carregando...</p>;
@@ -77,12 +79,18 @@ export default function DashboardPage() {
 
     return (
       <ul className={styles.recentList}>
-        {pacientesRecentes.map((p) => (
-          <li key={p.id}>
-            <span>{p.name}</span>
-          </li>
-        ))}
-      </ul>
+    {pacientesRecentes.map((p) => (
+      <li key={p.id} className={styles.recentItem}>
+        <div className={styles.recentAvatar}>
+           {p.name.charAt(0)}
+        </div>
+        <div className={styles.recentDetails}>
+          <span className={styles.recentName}>{p.name}</span>
+          {p.email && <small className={styles.recentEmail}>{p.email}</small>}
+        </div>
+      </li>
+    ))}
+  </ul>
     );
   };
 
@@ -94,11 +102,19 @@ export default function DashboardPage() {
     return (
       <ul className={styles.agendaList}>
         {agendaHoje.map((item) => (
-          <li key={item.id}>
-            <strong>{new Date(item.horario).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
-            {' — '}
-            <span>{item.paciente?.user?.name ?? 'Paciente'}</span>
-            {item.tipo ? <span> • {item.tipo}</span> : null}
+          <li key={item.id} className={styles.agendaItem}>
+            <div className={styles.agendaTime}>
+              <strong>{new Date(item.horario).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            </div>
+
+            <div className={styles.agendaDetails}>
+              <span className={styles.agendaPatientName}>
+                {item.paciente?.user?.name && typeof item.paciente.user.name === 'string'
+                    ? item.paciente.user.name : 'Paciente'}
+              </span>
+              {item.categoria && <span className={`${styles.tag} ${styles.tagPrimary}`}>{item.categoria}</span>}
+              {item.tipo && <span className={`${styles.tag} ${styles.tagSecondary}`}>{item.tipo}</span>}
+          </div>
           </li>
         ))}
       </ul>
@@ -112,7 +128,7 @@ export default function DashboardPage() {
       <main className={styles.mainContent}>
         <header className={styles.mainHeader}>
           <div className="greeting">
-            <h1>Bom dia, Dra. Marina.</h1>
+            <h1>Bem vindo de volta.</h1>
             <p>Você tem {todayCount ?? '...'} sessões agendadas para hoje.</p>
           </div>
         </header>
@@ -124,10 +140,6 @@ export default function DashboardPage() {
           </section>
 
           <div className={styles.sideCards}>
-            <section className={styles.infoCard}>
-              <h3>Ações Pendentes</h3>
-              {/* aqui você pode mostrar sugestões ou ações retornadas pelo backend */}
-            </section>
 
             <section className={styles.infoCard}>
               <h3>Pacientes Recentes</h3>

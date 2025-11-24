@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { EncryptionService } from "src/modules/services/encryptionService";
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService
+  ) {}
 
   private getDayRange(date = new Date()) {
     const start = new Date(date);
@@ -25,7 +29,7 @@ export class DashboardService {
     });
 
     // agenda do dia (detalhes)
-    const todayAgenda = await this.prisma.consulta.findMany({
+    let todayAgenda = await this.prisma.consulta.findMany({
       where: {
         horario: { gte: start, lte: end },
         paciente: { psicologo_responsavel_id: psicologoId },
@@ -44,13 +48,36 @@ export class DashboardService {
     });
 
     // pacientes recentes (baseado em updatedAt do paciente)
-    const recentPatients = await this.prisma.paciente.findMany({
+    let recentPatients = await this.prisma.paciente.findMany({
       where: {
         psicologo_responsavel_id: psicologoId,
       },
 
       take: 3,
       include: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    // 🔓 DESCRIPTOGRAFIA DOS DADOS DA AGENDA 🔓
+    todayAgenda = todayAgenda.map((consulta) => {
+      try {
+        const user = consulta.paciente.user;
+        user.name = this.encryption.decrypt(user.name);
+        user.email = this.encryption.decrypt(user.email);
+      } catch (e) {
+        console.warn('Falha ao descriptografar paciente na agenda:', e);
+      }
+      return consulta;
+    });
+
+    recentPatients = recentPatients.map((paciente) => {
+      try {
+        const user = paciente.user;
+        user.name = this.encryption.decrypt(user.name);
+        user.email = this.encryption.decrypt(user.email);
+      } catch (e) {
+        console.warn('Falha ao descriptografar paciente recente:', e);
+      }
+      return paciente;
     });
 
     return {
