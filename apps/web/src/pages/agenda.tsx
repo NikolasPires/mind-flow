@@ -32,10 +32,12 @@ import {
   Edit,
   Delete,
 } from '@mui/icons-material';
+import { FiPlus } from 'react-icons/fi';
 import styles from '../styles/Agenda.module.css';
 import { consultaService, Consulta } from '../services/consultaService';
 import { pacienteService, Paciente } from '../services/pacienteService';
 import { NextPageWithAuth } from '@/types/page-auth';
+import CreatePatientForm from '../components/CreatePatientForm';
 
 interface Appointment {
   id: string | number;
@@ -363,6 +365,12 @@ const Agenda: NextPageWithAuth = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedOccurrenceDate, setSelectedOccurrenceDate] = useState<Date | null>(null);
+  const [openCreatePatientModal, setOpenCreatePatientModal] = useState(false);
+
+  const handlePatientCreated = async () => {
+    await loadPacientes();
+    setOpenCreatePatientModal(false);
+  };
 
   // Handlers do modal
   const handleOpenModal = (appointment: Appointment, occurrenceDate?: Date) => {
@@ -525,7 +533,25 @@ const Agenda: NextPageWithAuth = () => {
                   </IconButton>
                 </Stack>
 
-                <Button
+                <Stack direction={isMobile ? 'column' : 'row'} spacing={1} width={isMobile ? '100%' : 'auto'}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<FiPlus size={18} />}
+                    onClick={() => setOpenCreatePatientModal(true)}
+                    sx={{
+                      borderColor: 'var(--primary-color, #00897b)',
+                      color: 'var(--primary-color, #00897b)',
+                      '&:hover': {
+                        borderColor: '#00695c',
+                        color: '#00695c',
+                      },
+                      minWidth: isMobile ? '100%' : 'auto',
+                    }}
+                  >
+                    {isMobile ? 'Novo Paciente' : 'Adicionar Paciente'}
+                  </Button>
+
+                  <Button
                   variant="contained"
                   startIcon={<Add />}
                   onClick={() => setOpenCreateModal(true)}
@@ -534,9 +560,10 @@ const Agenda: NextPageWithAuth = () => {
                     '&:hover': { backgroundColor: '#00695c' },
                     minWidth: isMobile ? '100%' : 'auto',
                   }}
-                >
-                  {isMobile ? 'Agendar' : 'Agendar Nova Sessão'}
-                </Button>
+                  >
+                    {isMobile ? 'Agendar' : 'Agendar Nova Sessão'}
+                  </Button>
+                </Stack>
               </Stack>
             </Grid>
           </Grid>
@@ -747,6 +774,23 @@ const Agenda: NextPageWithAuth = () => {
             Editar
           </Button>
           <Button onClick={handleCloseModal} size="small" sx={{ ml: 'auto' }}>
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openCreatePatientModal}
+        onClose={() => setOpenCreatePatientModal(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Criar Paciente</DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          <CreatePatientForm onSuccess={handlePatientCreated} />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setOpenCreatePatientModal(false)}>
             Fechar
           </Button>
         </DialogActions>

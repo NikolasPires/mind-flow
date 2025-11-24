@@ -363,9 +363,13 @@ const SettingsPage: React.FC = () => {
                     </h2>
                     <div className={styles.photoUploadContainer}>
                         <img 
-                            src={profile.foto || '/default-avatar.png'} 
+                            src={
+                                profile.foto && !profile.foto.startsWith('data:') 
+                                    ? profile.foto.replace('/upload/', '/upload/w_200,h_200,c_fill,g_face,f_auto,q_auto/') 
+                                    : (profile.foto || '/default-avatar.png')
+                            } 
                             alt="Foto de Perfil" 
-                            className={styles.profilePhoto} 
+                            className={styles.profilePhoto}
                         />
                         <input 
                             type="file" 
