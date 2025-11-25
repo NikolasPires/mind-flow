@@ -9,6 +9,6 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    "/((?!login|_next|favicon.ico).*)", // Protege tudo, exceto /login
+    "/((?!login|cadastro|_next|favicon.ico).*)", // Protege tudo, exceto /login
   ],
 };
