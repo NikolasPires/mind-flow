@@ -10,6 +10,9 @@
     "test": "echo 'no unit tests yet'"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.2",
+    "@tanstack/react-query-devtools": "^5.90.2",
+    "axios": "^1.12.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "5.15.20",
@@ -39,6 +42,7 @@
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14"
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.3.3"
   }
 }
