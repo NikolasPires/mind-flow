@@ -1,0 +1,40 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copia apenas os arquivos essenciais primeiro (cache mais eficiente)
+COPY package.json package-lock.json* yarn.lock* ./
+COPY prisma ./prisma/
+
+# Instala dependências
+RUN npm install
+
+# Copia o restante do código
+COPY . .
+
+# Gera o build do NestJS
+RUN npm run build
+
+# --------------------------------------------------------------------
+# PRODUÇÃO
+# --------------------------------------------------------------------
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copia node_modules da build
+COPY --from=builder /app/node_modules ./node_modules
+# Copia o build
+COPY --from=builder /app/dist ./dist
+# Copia os schemas do Prisma
+COPY --from=builder /app/prisma ./prisma
+# Copia package.json para o start
+COPY package.json ./package.json
+
+# Gera o cliente Prisma em produção
+RUN npx prisma generate
+
+# Porta que o NestJS usa
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]
