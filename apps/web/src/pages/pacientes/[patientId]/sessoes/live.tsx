@@ -1,21 +1,24 @@
-// src/pages/pacientes/[patientId]/sessoes/live.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import ReactMarkdown from 'react-markdown'; 
+import ReactMarkdown from 'react-markdown';
+import { useSession } from 'next-auth/react';
+
 import styles from '@/styles/SessaoAtiva.module.css';
-import { 
-  FiPlayCircle, 
-  FiPauseCircle, 
-  FiCheckSquare, 
-  FiMic, 
-  FiChevronsLeft, 
-  FiSquare, 
+import {
+  FiPlayCircle,
+  FiPauseCircle,
+  FiCheckSquare,
+  FiMic,
+  FiChevronsLeft,
+  FiSquare,
   FiEdit2,
   FiFileText,
-} from 'react-icons/fi'; 
+} from 'react-icons/fi';
 import { IoSparkles } from 'react-icons/io5';
-import { mockPatientsDetails } from '@/lib/mockData';
+
+import { pacienteService } from '@/services/pacienteService';
+import { consultaService } from '@/services/consultaService';
 
 type SessionState = 'INACTIVE' | 'ACTIVE' | 'PAUSED' | 'REVIEW';
 
@@ -35,9 +38,15 @@ const formatTime = (totalSeconds: number): string => {
   ).padStart(2, '0')}`;
 };
 
+const getPatientCacheKey = (id: string) => `mindflow:patient:${id}`;
+
 const LiveSessionPage: React.FC = () => {
   const router = useRouter();
   const { patientId } = router.query;
+  const { data: session } = useSession();
+
+  const [patient, setPatient] = useState<any>(null);
+  const [loadingPatient, setLoadingPatient] = useState(true);
 
   const [sessionState, setSessionState] = useState<SessionState>('INACTIVE');
   const [isRecording, setIsRecording] = useState(false);
@@ -50,8 +59,60 @@ const LiveSessionPage: React.FC = () => {
 
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState('');
+  const [isSavingSession, setIsSavingSession] = useState(false);
 
   const recognitionRef = useRef<any>(null);
+  const DEFAULT_AVATAR = '/userDefault.svg';
+
+  // Preenche o estado com o paciente que já foi carregado em patientId.tsx (sessionStorage)
+  useEffect(() => {
+    if (!patientId || patient || typeof window === 'undefined') return;
+    const cached = window.sessionStorage.getItem(getPatientCacheKey(String(patientId)));
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setPatient(parsed);
+        setLoadingPatient(false);
+      } catch (err) {
+        console.warn('Não foi possível ler o cache do paciente:', err);
+      }
+    }
+  }, [patientId, patient]);
+
+  // Busca dados atualizados do paciente no backend
+  useEffect(() => {
+    if (!router.isReady || !session || !patientId) return;
+
+    const fetchPatientData = async () => {
+      try {
+        const token = (session as any)?.accessToken;
+        if (!token) {
+          throw new Error('Token de autenticação não encontrado.');
+        }
+
+        const data = await pacienteService.getPacienteById(patientId as string, token);
+        setPatient(data);
+
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem(
+              getPatientCacheKey(String(patientId)),
+              JSON.stringify(data)
+            );
+          } catch (err) {
+            console.warn('Não foi possível salvar o paciente no cache:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar paciente na sessão:', err);
+        alert('Erro ao carregar dados do paciente.');
+      } finally {
+        setLoadingPatient(false);
+      }
+    };
+
+    fetchPatientData();
+  }, [router.isReady, session, patientId]);
 
   useEffect(() => {
     let interval: number | null = null;
@@ -117,7 +178,6 @@ const LiveSessionPage: React.FC = () => {
       };
 
       recognition.onerror = console.error;
-
       recognition.onend = () => setIsRecording(false);
 
       recognition.start();
@@ -136,10 +196,9 @@ const LiveSessionPage: React.FC = () => {
     }
 
     setIsLoadingSuggestion(true);
-    setAiSuggestion(''); // Limpa sugestão anterior, mas NÃO limpa as notas
+    setAiSuggestion('');
 
     try {
-      // Simulação de requisição API
       const response = await fetch('/api/generate-suggestion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,37 +212,75 @@ const LiveSessionPage: React.FC = () => {
       setAiSuggestion(data.suggestion || 'Nenhuma sugestão retornada.');
     } catch (err) {
       console.error(err);
-      // Fallback visual se não houver API real rodando
       setAiSuggestion('Erro ao conectar com a IA. Verifique se a API está rodando.');
     } finally {
       setIsLoadingSuggestion(false);
     }
   };
 
-  const handleFinalizeAndSave = () => {
+  const handleFinalizeAndSave = async () => {
     if (notes.trim().length === 0) {
       alert('Adicione anotações antes de finalizar.');
       return;
     }
 
-    const payload = {
-      patientId,
-      notes,
-      transcript: finalTranscript,
-      aiSuggestion,
-      durationSeconds: timeElapsed,
-      date: new Date().toISOString(),
-    };
+    if (!session) {
+      alert('Sessão expirada. Faça login novamente.');
+      return;
+    }
 
-    console.log('Dados salvos:', payload);
-    alert('Sessão finalizada!');
-    router.push(`/pacientes/${patientId}`);
+    if (!patientId) {
+      alert('Paciente inválido.');
+      return;
+    }
+
+    try {
+      setIsSavingSession(true);
+      const token = (session as any)?.accessToken;
+      if (!token) {
+        alert('Token de autenticação não encontrado. Faça login novamente.');
+        return;
+      }
+
+      const endTime = new Date();
+      const startTimestamp = timeElapsed > 0 ? endTime.getTime() - timeElapsed * 1000 : endTime.getTime();
+      const horario = new Date(startTimestamp).toISOString();
+
+      await consultaService.createConsulta(
+        {
+          paciente_id: String(patientId),
+          horario,
+          tipo: 'Sessão Terapêutica',
+          categoria: 'Live',
+          tags: ['live-session'],
+          status: 'CONCLUIDA',
+          anotacoes: notes,
+          transcricao: finalTranscript || undefined,
+          sugestao_IA: aiSuggestion || undefined,
+        },
+        token
+      );
+
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(getPatientCacheKey(String(patientId)));
+      }
+
+      alert('Sessão finalizada e salva!');
+      router.push(`/pacientes/${patientId}`);
+    } catch (error: any) {
+      console.error('Erro ao salvar sessão:', error);
+      alert(error?.message || 'Erro ao salvar sessão. Tente novamente.');
+    } finally {
+      setIsSavingSession(false);
+    }
   };
 
-  const patient = mockPatientsDetails.find((p) => p.id === patientId);
+  if (loadingPatient) {
+    return <div className={styles.centeredMessage}>Carregando dados da sessão...</div>;
+  }
 
-  if (!router.isReady || !patient) {
-    return <div className={styles.centeredMessage}>Carregando...</div>;
+  if (!patient) {
+    return <div className={styles.centeredMessage}>Paciente não encontrado.</div>;
   }
 
   const displayableTranscript = (
@@ -199,22 +296,27 @@ const LiveSessionPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Sessão Ativa - {patient.name}</title>
+        <title>Sessão Ativa - {patient.user?.name}</title>
       </Head>
 
       <div className={styles.sessionPage}>
         <aside className={styles.sidebar}>
-          <button 
-            type="button" 
-            onClick={() => router.back()} 
+          <button
+            type="button"
+            onClick={() => router.back()}
             className={styles.backButton}
           >
             <FiChevronsLeft /> Voltar
           </button>
 
-          <img src={patient.avatar} alt={`Avatar de ${patient.name}`} className={styles.patientAvatar} />
+          <img
+            src={patient.user?.photo_url || DEFAULT_AVATAR}
+            alt={`Avatar de ${patient.user?.name}`}
+            className={styles.patientAvatar}
+            onError={(e) => ((e.target as HTMLImageElement).src = DEFAULT_AVATAR)}
+          />
 
-          <h2>{patient.name}</h2>
+          <h2>{patient.user?.name}</h2>
 
           <div className={styles.sessionInfo}>
             <p><strong>Data:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
@@ -224,10 +326,7 @@ const LiveSessionPage: React.FC = () => {
         </aside>
 
         <main className={styles.mainContent}>
-          
-          {/* ===================== CONTROLS ===================== */}
           <div className={styles.controlsBar}>
-
             {!isSessionInactive && (
               <div className={styles.timerDisplay}>{formatTime(timeElapsed)}</div>
             )}
@@ -288,14 +387,14 @@ const LiveSessionPage: React.FC = () => {
                   type="button"
                   onClick={handleFinalizeAndSave}
                   className={styles.sessionButtonFinalize}
+                  disabled={isSavingSession}
                 >
-                  <FiCheckSquare /> Salvar e Sair
+                  <FiCheckSquare /> {isSavingSession ? 'Salvando...' : 'Salvar e Sair'}
                 </button>
               )}
             </div>
           </div>
 
-          {/* ===================== ANOTAÇÕES ===================== */}
           <h3 className={styles.sectionTitle}>
             <FiEdit2 /> Anotações Clínicas
           </h3>
@@ -309,7 +408,6 @@ const LiveSessionPage: React.FC = () => {
             />
           </div>
 
-          {/* ===================== TRANSCRIÇÃO ===================== */}
           <h3 className={styles.sectionTitle}>
             <FiFileText /> Transcrição
           </h3>
@@ -322,7 +420,6 @@ const LiveSessionPage: React.FC = () => {
             placeholder="O texto transcrito aparecerá aqui..."
           />
 
-          {/* ===================== IA (CARD INFORMATIVO) ===================== */}
           <h3 className={styles.sectionTitle}>
             <IoSparkles /> Sugestão da Malu
           </h3>
@@ -338,14 +435,12 @@ const LiveSessionPage: React.FC = () => {
               {isLoadingSuggestion ? 'A Malu está analisando...' : 'Pedir ajuda à Malu'}
             </button>
 
-            {/* CARD DA IA ATUALIZADO */}
             <div className={styles.aiSuggestionCard}>
               {isLoadingSuggestion ? (
                 <span className={styles.loadingText}>
                   <IoSparkles /> A Malu está analisando a sessão...
                 </span>
               ) : aiSuggestion ? (
-                // O ReactMarkdown converte os asteriscos em HTML real
                 <ReactMarkdown>{aiSuggestion}</ReactMarkdown>
               ) : (
                 <span className={styles.aiPlaceholder}>

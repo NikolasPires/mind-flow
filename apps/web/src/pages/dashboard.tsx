@@ -40,7 +40,7 @@ export default function DashboardPage() {
         throw new Error('Usuário não autenticado');
       }
 
-      const res = await fetch('http://localhost:3001/dashboard/summary', {
+      const res = await fetch('http://127.0.0.1:3001/dashboard/summary', {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
           'Content-Type': 'application/json',

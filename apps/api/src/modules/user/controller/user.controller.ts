@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Request, UnauthorizedException, Param, ForbiddenException, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, Request, Param, Patch } from '@nestjs/common';
 import { UserViewModel } from '../viewModel/UserViewModel';
 import { PacienteViewModel } from '../viewModel/PacienteViewModel';
 import { Public } from 'src/modules/auth/decorators/isPublic';
@@ -42,16 +42,19 @@ export class UserController {
   @Post('paciente')
   @Public()
   async createPaciente(@Body() body: CreatePacienteBody) {
-    const { email, name, password, cpf, gender } = body;
+    // --- ALTERAÇÃO: Adicionado 'phone' aqui
+    const { email, name, password, cpf, gender, phone } = body;
     const user = await this.createPacienteUseCase.execute({ 
       email, 
       name, 
       password, 
       cpf, 
-      gender 
+      gender,
+      phone // Passando para o UseCase
     });
     return UserViewModel.toHttp(user);
   }
+
   @Get('paciente/:id') 
   async getPacienteById(
     @Param('id') pacienteId: string,
@@ -63,9 +66,11 @@ export class UserController {
 
   @Post('patients')
   async createPatient(@Request() request: any, @Body() body: CreatePacienteBody) {
-    const psicologoId = request.user.id; // ID do usuário logado (que é o userId do psicólogo)
-    console.log(request.user)
-    const { email, name, password, cpf, gender } = body;
+    const psicologoId = request.user.id;
+    // --- ALTERAÇÃO: Adicionado 'phone' aqui também
+    const { email, name, password, cpf, gender, phone } = body;
+    
+    // NOTA: Certifique-se de que o CreatePacienteWithPsicologoUseCase TAMBÉM foi atualizado para receber 'phone'
     const user = await this.createPacienteWithPsicologoUseCase.execute({
       email, 
       name, 
@@ -73,13 +78,14 @@ export class UserController {
       cpf, 
       gender,
       psicologoId,
+      phone
     });
     return UserViewModel.toHttp(user);
   }
 
   @Get('patients')
   async getPatients(@Request() request: any) {
-    const psicologoId = request.user.id; // ID do usuário logado (que é o userId do psicólogo)
+    const psicologoId = request.user.id;
     const pacientes = await this.listPacientesUseCase.execute({ psicologoId });
     return PacienteViewModel.toHttpList(pacientes);
   }
