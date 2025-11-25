@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const response = await fetch('http://localhost:3001/signIn', {
+        const response = await fetch(`${process.env.DB_HOST}/signIn`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

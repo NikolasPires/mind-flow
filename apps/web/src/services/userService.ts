@@ -38,7 +38,7 @@ export interface UpdateUserProfileData {
 
 // Normalizar URL do backend
 const getBaseURL = () => {
-  const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
+  const envUrl = process.env.DB_HOST;
   if (!envUrl) return 'http://localhost:3001';
   let url = envUrl.trim();
   if (url.endsWith('/')) url = url.slice(0, -1);

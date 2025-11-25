@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_DB_HOST || 'http://localhost:3001',
+  baseURL: process.env.DB_HOST || 'http://localhost:3001',
   headers: { 'Content-Type': 'application/json' },
 });
 

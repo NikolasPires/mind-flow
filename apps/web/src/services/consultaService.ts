@@ -49,7 +49,7 @@ export interface UpdateConsultaData {
 
 // Normalizar a URL do backend (remove trailing slash e garante http://)
 const getBaseURL = () => {
-  const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
+  const envUrl = process.env.DB_HOST;
   if (!envUrl) return 'http://localhost:3001';
   
   let url = envUrl.trim();
