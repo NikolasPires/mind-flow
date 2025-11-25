@@ -1,74 +1,73 @@
-
+/* src/styles/Dashboard.module.css */
 
 .dashboardContainer {
+  /* --- SUAS CORES ORIGINAIS --- */
+  --primary: #00897b;       /* Teal Original */
+  --primary-hover: #00695c; /* Teal Escuro */
+  --primary-light: #e0f2f1; /* Fundo claro para tags/ícones */
+  
+  --sidebar-bg: #1a2a3a;    /* Azul escuro original */
+  --bg-body: #f4f7fa;       /* Fundo cinza azulado original */
+  --bg-card: #ffffff;
+  
+  --text-title: #333333;
+  --text-body: #555555;
+  --text-muted: #999999;
+  
+  --border-color: #eeeeee;
+
+  /* Cores de Status/Tags */
+  --tag-cat-bg: #e3f2fd;    /* Azul bem claro */
+  --tag-cat-text: #1565c0;  /* Azul forte */
+  --tag-type-bg: #f3e5f5;   /* Roxo bem claro */
+  --tag-type-text: #7b1fa2; /* Roxo forte */
+
   display: flex;
-  background-color: #f4f7fa;
+  background-color: var(--bg-body);
   min-height: 100vh;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-body);
 }
 
-/* Barra lateral */
+/* --- Sidebar (Volta ao padrão do sistema) --- */
 .sidebar {
   width: 250px;
-  background-color: #1a2a3a; /* Cor escura da sidebar */
+  background-color: var(--sidebar-bg);
   color: #ffffff;
   padding: 24px;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .sidebarHeader {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 40px;
+  color: #ffffff;
 }
 
-.sidebarNav ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebarNav li a {
-  color: #e0e0e0;
-  text-decoration: none;
-  display: block;
-  padding: 12px 0;
-  border-radius: 6px;
-}
-
-.sidebarNav li.active a {
-  background-color: #007aff; 
-  color: white;
-  padding-left: 10px; 
-}
-
+/* --- Conteúdo Principal --- */
 .mainContent {
-  flex-grow: 1; 
+  flex-grow: 1;
   padding: 32px;
+  overflow-y: auto;
+  height: 100vh;
 }
 
-.btnPrimary {
-  background-color: var(--primary-color, #00897b); 
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+/* Scrollbar sutil */
+.mainContent::-webkit-scrollbar {
+  width: 8px;
+}
+.mainContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mainContent::-webkit-scrollbar-thumb {
+  background-color: #cfd8dc;
+  border-radius: 4px;
 }
 
-.btnPrimary:hover {
-  background-color: #00695c;
-  transform: translateY(-2px);
-}
-
-.btnPrimary:active {
-  background-color: #005f56;
-  transform: translateY(0);
-}
-
+/* --- Header --- */
 .mainHeader {
   display: flex;
   justify-content: space-between;
@@ -78,135 +77,153 @@
 
 .mainHeader h1 {
   font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-title);
   margin: 0;
 }
 
 .mainHeader p {
-  color: #666;
-  margin: 4px 0 0;
+  color: var(--text-body);
+  margin-top: 4px;
+  font-size: 1rem;
 }
 
-/* Corpo do conteúdo com os cards */
+/* --- Grid de Conteúdo --- */
 .contentBody {
   display: flex;
-  gap: 24px; /* Espaço entre a coluna da agenda e a coluna dos cards laterais */
+  gap: 24px;
+  align-items: start;
+}
+
+/* --- Cards --- */
+.agendaCard,
+.infoCard {
+  background-color: var(--bg-card);
+  border-radius: 8px; /* Voltei para 8px para bater com seus forms */
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Sombra mais leve e compatível */
+  border: 1px solid var(--border-color);
 }
 
 .agendaCard {
-  flex-grow: 1; /* Ocupa a maior parte do espaço */
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  flex-grow: 1;
 }
 
+.agendaCard h2,
+.infoCard h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  color: var(--text-title);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+/* --- Coluna Lateral --- */
 .sideCards {
-  width: 300px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  flex-shrink: 0;
 }
 
-.infoCard {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.infoCard h3 {
-  margin-top: 0;
-}
-
+/* --- Lista da Agenda --- */
 .agendaList {
   list-style: none;
   padding: 0;
-  margin-top: 15px;
+  margin: 0;
 }
 
 .agendaItem {
-  display: flex; /* Alinha o tempo e os detalhes lado a lado */
+  display: flex;
   align-items: center;
   padding: 15px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
 }
 
 .agendaItem:last-child {
   border-bottom: none;
 }
 
+.agendaItem:hover {
+  background-color: #fafafa;
+}
+
+/* Coluna de Tempo */
 .agendaTime {
-  flex-shrink: 0; /* Impede que o horário encolha */
-  width: 80px; /* Largura fixa para o horário */
+  flex-shrink: 0;
+  width: 80px;
   font-size: 1.1rem;
-  color: #007aff; /* Cor azul para destacar o horário */
+  color: var(--primary); /* Usa o Teal #00897b */
   font-weight: 700;
   text-align: right;
   padding-right: 20px;
-  border-right: 2px solid #007aff20; /* Linha sutil separadora */
+  border-right: 2px solid var(--primary-light);
 }
 
 .agendaDetails {
   flex-grow: 1;
   padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .agendaPatientName {
   font-weight: 600;
   font-size: 1rem;
-  display: block; /* Garante que o nome ocupe uma linha */
-  margin-bottom: 5px;
+  color: var(--text-title);
 }
 
-.agendaTags {
-  display: flex;
-  gap: 8px;
-}
-
-/* Estilos de Tag (Etiquetas) */
+/* --- Tags (Categorias e Tipos) --- */
 .tag {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 4px; /* Canto levemente arredondado padrão do sistema */
   font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: capitalize;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 8px;
 }
 
 .tagPrimary {
-  background-color: #e6f0ff;
-  color: #007aff;
+  background-color: var(--tag-cat-bg);
+  color: var(--tag-cat-text);
 }
 
 .tagSecondary {
-  background-color: #e0f2f1;
-  color: #00897b;
+  background-color: var(--tag-type-bg);
+  color: var(--tag-type-text);
 }
 
-/* Estilos da Lista de Pacientes Recentes */
+/* --- Lista de Pacientes Recentes --- */
 .recentList {
   list-style: none;
   padding: 0;
-  margin-top: 15px;
+  margin: 0;
 }
 
 .recentItem {
   display: flex;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .recentItem:last-child {
   border-bottom: none;
 }
 
+/* Avatar */
 .recentAvatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background-color: #d1e7dd; /* Cor de fundo suave */
-  color: #00897b; /* Cor do texto */
+  border-radius: 50%; /* Círculo clássico */
+  background-color: var(--primary-light); /* Teal bem claro */
+  color: var(--primary); /* Texto Teal */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -223,10 +240,51 @@
 .recentName {
   font-weight: 600;
   font-size: 0.95rem;
-  color: #333;
+  color: var(--text-title);
 }
 
 .recentEmail {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--text-muted);
+}
+
+/* --- Responsividade --- */
+@media (max-width: 1024px) {
+  .contentBody {
+    flex-direction: column;
+  }
+  
+  .sideCards {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  
+  .infoCard {
+    min-width: 300px;
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboardContainer {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+  }
+
+  .mainContent {
+    padding: 20px;
+  }
+
+  .sideCards {
+    flex-direction: column;
+  }
 }
