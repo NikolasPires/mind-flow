@@ -6,11 +6,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: process.env.FRONT_END_URL?.split(','),
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  });
+  origin: (origin, callback) => {
+    const allowed = process.env.FRONT_END_URL?.split(',').map(o => o.trim());
+
+    console.log('ORIGIN RECEBIDO:', origin);
+    console.log('ALLOW:', allowed);
+
+    if (!origin || allowed?.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS bloqueado: ' + origin), false);
+    }
+  },
+  credentials: true,
+});
 
   app.useGlobalPipes(new ValidationPipe());
 
