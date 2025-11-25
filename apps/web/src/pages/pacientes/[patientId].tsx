@@ -11,7 +11,23 @@ import Layout from '@/components/Layout';
 import styles from '@/styles/PacienteDetalhes.module.css';
 
 import { pacienteService } from '@/services/pacienteService';
-import type { Paciente } from '@/services/pacienteService';
+import type { PacienteDetails, ConsultaResumo } from '@/services/pacienteService';
+
+const getPatientCacheKey = (id: string) => `mindflow:patient:${id}`;
+
+const statusLabelMap: Record<ConsultaResumo['status'], string> = {
+  CONCLUIDA: 'Concluída',
+  CONFIRMADO: 'Confirmada',
+  A_CONFIRMAR: 'A Confirmar',
+  CANCELADO: 'Cancelada',
+};
+
+const statusVariantMap: Record<ConsultaResumo['status'], 'Concluida' | 'Confirmado' | 'AConfirmar' | 'Cancelado'> = {
+  CONCLUIDA: 'Concluida',
+  CONFIRMADO: 'Confirmado',
+  A_CONFIRMAR: 'AConfirmar',
+  CANCELADO: 'Cancelado',
+};
 
 const PatientDetailsPage: React.FC = () => {
   const router = useRouter();
@@ -19,7 +35,7 @@ const PatientDetailsPage: React.FC = () => {
 
   const { data: session } = useSession();
 
-  const [patient, setPatient] = useState<any>(null);
+  const [patient, setPatient] = useState<PacienteDetails | null>(null);
   const [activeTab, setActiveTab] = useState('HistoricoDeSessoes');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +59,16 @@ const PatientDetailsPage: React.FC = () => {
 console.log("Paciente retornado do backend:", data);
 
         setPatient(data);
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem(
+              getPatientCacheKey(String(patientId)),
+              JSON.stringify(data)
+            );
+          } catch (err) {
+            console.warn('Não foi possível salvar paciente em cache:', err);
+          }
+        }
       } catch (err: any) {
         setError(err.message || "Erro ao carregar paciente");
       } finally {
@@ -127,19 +153,27 @@ console.log("Paciente retornado do backend:", data);
       <div className={styles.tabContent}>
         {activeTab === "HistoricoDeSessoes" && (
           <div className={styles.sessionHistory}>
-            {patient.sessions && patient.sessions.length > 0 ? (
-              patient.sessions.map((session: any) => (
-                <SessionCard
-                  key={session.id}
-                  date={session.date}
-                  type={session.type}
-                  notes={session.notes}
-                  status={session.status}
-                  onViewProntuario={() =>
-                    router.push(`/pacientes/${patientId}/sessoes/${session.id}`)
-                  }
-                />
-              ))
+            {patient.consultas && patient.consultas.length > 0 ? (
+              patient.consultas.map((consulta: ConsultaResumo) => {
+                const formattedDate = new Date(consulta.horario).toLocaleString('pt-BR', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                });
+
+                return (
+                  <SessionCard
+                    key={consulta.id}
+                    date={formattedDate}
+                    type={consulta.tipo}
+                    notes={consulta.anotacoes || consulta.transcricao || 'Sem observações registradas.'}
+                    statusLabel={statusLabelMap[consulta.status]}
+                    statusVariant={statusVariantMap[consulta.status]}
+                    onViewProntuario={() =>
+                      router.push(`/pacientes/${patientId}/sessoes/${consulta.id}`)
+                    }
+                  />
+                );
+              })
             ) : (
               <p>Nenhuma sessão cadastrada ainda.</p>
             )}
@@ -150,9 +184,7 @@ console.log("Paciente retornado do backend:", data);
           <div className={styles.personalInfoSection}>
             <h3>Dados Pessoais</h3>
             <p><strong>Email:</strong> {patient.user?.email || "—"}</p>
-            <p><strong>Telefone:</strong> {patient.user.phone || "—"}</p>
-            <p><strong>Data de Nascimento:</strong> {patient.birth_date || "—"}</p>
-            <p><strong>Endereço:</strong> {patient.address || "—"}</p>
+            <p><strong>Telefone:</strong> {patient.user?.phone || "—"}</p>
           </div>
         )}
       </div>

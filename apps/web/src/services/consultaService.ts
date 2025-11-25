@@ -8,6 +8,8 @@ export interface Transcricao {
   status: 'PENDENTE' | 'PROCESSANDO' | 'CONCLUIDA' | 'ERRO';
 }
 
+export type ConsultaStatus = 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR' | 'CONCLUIDA';
+
 export interface Consulta {
   id: string;
   paciente_id: string;
@@ -18,9 +20,10 @@ export interface Consulta {
   tipo: string;
   categoria: string;
   tags: string[];
-  status: 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR';
+  status: ConsultaStatus;
   sugestao_IA?: string | null;
-  transcricao_id?: string | null;
+  transcricao?: string | null;
+  anotacoes?: string | null;
   created_at: string;
   updatedAt: string;
 }
@@ -31,9 +34,10 @@ export interface CreateConsultaData {
   tipo: string;
   categoria: string;
   tags: string[];
-  status?: 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR';
+  status?: ConsultaStatus;
   sugestao_IA?: string;
-  transcricao_id?: string;
+  transcricao?: string;
+  anotacoes?: string;
 }
 
 export interface UpdateConsultaData {
@@ -42,15 +46,16 @@ export interface UpdateConsultaData {
   tipo?: string;
   categoria?: string;
   tags?: string[];
-  status?: 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR';
+  status?: ConsultaStatus;
   sugestao_IA?: string;
-  transcricao_id?: string;
+  transcricao?: string;
+  anotacoes?: string;
 }
 
 // Normalizar a URL do backend (remove trailing slash e garante http://)
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
-  if (!envUrl) return 'http://localhost:3001';
+  if (!envUrl) return 'http://127.0.0.1:3001';
   
   let url = envUrl.trim();
   // Remove trailing slash

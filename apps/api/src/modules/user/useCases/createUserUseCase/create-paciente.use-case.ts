@@ -13,6 +13,7 @@ interface CreatePacienteRequest {
     password: string;
     cpf: string;
     gender: Gender;
+    phone?: string; // --- ALTERAÇÃO 1: Adicionado na interface
 }
 
 @Injectable()
@@ -23,15 +24,16 @@ export class CreatePacienteUseCase {
         private encryptionService: EncryptionService,
     ) {}
 
-    async execute({ email, name, password, cpf, gender }: CreatePacienteRequest): Promise<User> {
+    // --- ALTERAÇÃO 2: Recebendo 'phone' nos argumentos
+    async execute({ email, name, password, cpf, gender, phone }: CreatePacienteRequest): Promise<User> {
         const cpfHash = createHash('sha256').update(cpf).digest('hex');
         const emailHash = createHash('sha256').update(email).digest('hex');
+        
         const userWithSameEmail = await this.userRepository.findByEmailHash(emailHash);
         if (userWithSameEmail) {
             throw new ConflictException("Este endereço de email já está em uso.");
         }
         
-
         const pacienteWithSameCpf = await this.pacienteRepository.findByCpfHash(cpfHash); 
         
         if (pacienteWithSameCpf) {
@@ -44,6 +46,7 @@ export class CreatePacienteUseCase {
             name,
             password: await hash(password, 10),
             role: Role.PACIENTE,
+            phone: phone, // --- ALTERAÇÃO 3: Passando para a entidade User
         });
 
         const encryptedCpf = this.encryptionService.encrypt(cpf);

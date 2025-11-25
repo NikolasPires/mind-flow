@@ -33,5 +33,9 @@ export class UpdateConsultaBody {
 
     @IsOptional()
     @IsString()
-    transcricao_id?: string;
+    transcricao?: string;
+
+    @IsOptional()
+    @IsString()
+    anotacoes?: string;
 }

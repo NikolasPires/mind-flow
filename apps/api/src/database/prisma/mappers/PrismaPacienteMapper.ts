@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common'; // <-- 1. Importar
-import { Paciente as PrismaPaciente } from "generated/prisma";
+import { Injectable } from '@nestjs/common';
+import { Paciente as PrismaPaciente } from "generated/prisma"; // Ajuste o import conforme seu projeto
 import { EncryptionService } from "src/modules/services/encryptionService";
 import { Paciente, Gender, PatientStatus } from "src/modules/user/entities/Paciente";
 
@@ -11,7 +11,7 @@ export class PrismaPacienteMapper {
   toPrisma(paciente: Paciente) {
     return {
       userId: paciente.userId,
-
+      // ... (sem alterações aqui)
       cpf: paciente.cpf ? this.encryptionService.encrypt(paciente.cpf) : null,
       history: paciente.history 
         ? this.encryptionService.encrypt(paciente.history) 
@@ -28,9 +28,9 @@ export class PrismaPacienteMapper {
   }
   
   toDomain(raw: PrismaPaciente): Paciente {
+      // ... (sem alterações aqui)
       return new Paciente({
           userId: raw.userId,
-
           cpf: raw.cpf ? this.encryptionService.decrypt(raw.cpf) : null,
           history: raw.history 
             ? this.encryptionService.decrypt(raw.history) 
@@ -46,8 +46,17 @@ export class PrismaPacienteMapper {
       });
   }
 
-
-  toDomainWithUser(raw: PrismaPaciente & { user: { name: string; email: string; photo_url: string | null } | null }): Paciente & { user: { name: string; email: string; photo_url: string | null } } {
+  // --- AQUI ESTÁ A MUDANÇA ---
+  toDomainWithUser(
+    raw: PrismaPaciente & { 
+      user: { 
+        name: string; 
+        email: string; 
+        photo_url: string | null; 
+        phone: string | null; // 1. Adicionei o tipo aqui
+      } | null 
+    }
+  ): Paciente & { user: { name: string; email: string; photo_url: string | null; phone: string | null } } {
     
     const paciente = this.toDomain(raw); 
     
@@ -68,6 +77,7 @@ export class PrismaPacienteMapper {
         name: this.encryptionService.decrypt(raw.user.name),
         email: this.encryptionService.decrypt(raw.user.email),
         photo_url: raw.user.photo_url,
+        phone: raw.user.phone ? this.encryptionService.decrypt(raw.user.phone) : null,
       },
     } as any;
   }

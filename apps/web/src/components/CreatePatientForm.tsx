@@ -1,4 +1,3 @@
-// src/components/CreatePatientForm.tsx
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import styles from '../styles/CreatePatientForm.module.css';
@@ -35,7 +34,6 @@ const CreatePatientForm: React.FC<Props> = ({ onSuccess }) => {
       }
 
       const cpfDigits = cpf.replace(/\D/g, '');
-
       const password = cpfDigits.substring(0, 6);
 
       const genderMap: Record<string, 'MASCULINO' | 'FEMININO' | 'OUTRO'> = {
@@ -45,13 +43,14 @@ const CreatePatientForm: React.FC<Props> = ({ onSuccess }) => {
         'nao-informar': 'OUTRO'
       };
 
+      // --- ALTERAÇÃO AQUI: Chave 'phone' em vez de 'telefone' ---
       const payload = {
         name,
         email,
         password,
         cpf: cpfDigits,
         gender: genderMap[gender],
-        telefone: phone,
+        phone: phone, 
       };
 
       await pacienteService.createPaciente(payload, token);
@@ -64,7 +63,7 @@ const CreatePatientForm: React.FC<Props> = ({ onSuccess }) => {
       setCpf('');
       setGender('');
 
-      if (onSuccess) onSuccess(); // 🔥 Fecha modal + recarrega lista
+      if (onSuccess) onSuccess(); 
 
     } catch (error: any) {
       console.error('Erro ao cadastrar:', error);
