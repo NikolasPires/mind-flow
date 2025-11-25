@@ -43,8 +43,8 @@ crie um .env e um .env.local
 
 
 **.env**
-- DATABASE_URL="postgresql://docker:docker@localhost:5432/meu_banco?schema=public"
+- DATABASE_URL="postgresql://docker:docker@127.0.0.1:5432/meu_banco?schema=public"
 - JWT_SECRET=SEU_SECRET
-- DB_HOST="https://localhost:3001/"
+- NEXT_PUBLIC_DB_HOST="https://127.0.0.1:3001/"
 **.env.local**
 - NEXTAUTH_SECRET=SEU_SECRET
