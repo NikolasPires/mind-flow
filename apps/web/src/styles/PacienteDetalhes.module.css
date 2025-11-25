@@ -171,19 +171,24 @@
   text-transform: uppercase;
 }
 
-.sessionStatus.concluída {
-  background-color: #e8f5e9; /* Light green */
-  color: #2e7d32; /* Dark green */
+.sessionStatus.statusConcluida {
+  background-color: #e8f5e9;
+  color: #2e7d32;
 }
 
-.sessionStatus.online {
-  background-color: #e3f2fd; /* Light blue */
-  color: #1976d2; /* Dark blue */
+.sessionStatus.statusConfirmado {
+  background-color: #e3f2fd;
+  color: #1976d2;
 }
 
-.sessionStatus.agendada {
-  background-color: #fff3e0; /* Light orange */
-  color: #ef6c00; /* Dark orange */
+.sessionStatus.statusAConfirmar {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.sessionStatus.statusCancelado {
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 .viewProntuarioButton,

@@ -95,7 +95,8 @@ export class PrismaConsultaRepository implements ConsultaRepository {
                 tags: consulta.tags,
                 status: consulta.status,
                 sugestao_IA: consulta.sugestao_IA,
-                transcricao_id: consulta.transcricao_id,
+                transcricao: consulta.transcricao,
+                anotacoes: consulta.anotacoes,
                 created_at: consulta.created_at,
                 updatedAt: consulta.updatedAt,
                 paciente: consultaRaw.paciente ? {
@@ -119,7 +120,8 @@ export class PrismaConsultaRepository implements ConsultaRepository {
                 tags: consultaRaw.tags,
                 status: consultaRaw.status,
                 sugestao_IA: consultaRaw.sugestao_IA,
-                transcricao_id: consultaRaw.transcricao_id,
+                transcricao: (consultaRaw as any).transcricao,
+                anotacoes: (consultaRaw as any).anotacoes,
                 updatedAt: new Date(),
             } as any,
         });

@@ -6,7 +6,7 @@ Guia completo para testar as rotas da API de Transcrição no Postman.
 
 ### Base URL
 ```
-http://localhost:3001
+http://127.0.0.1:3001
 ```
 
 ### Headers Padrão
@@ -22,7 +22,7 @@ Authorization: Bearer {seu_token_aqui} (opcional)
 ### 1. GET /transcricoes - Listar todas as transcrições
 
 **Método:** `GET`  
-**URL:** `http://localhost:3001/transcricoes`
+**URL:** `http://127.0.0.1:3001/transcricoes`
 
 **Headers:**
 ```
@@ -59,11 +59,11 @@ Authorization: Bearer {token} (opcional)
 ### 2. GET /transcricoes/:id - Buscar transcrição por ID
 
 **Método:** `GET`  
-**URL:** `http://localhost:3001/transcricoes/{id}`
+**URL:** `http://127.0.0.1:3001/transcricoes/{id}`
 
 **Exemplo de URL:**
 ```
-http://localhost:3001/transcricoes/clxtrans123
+http://127.0.0.1:3001/transcricoes/clxtrans123
 ```
 
 **Headers:**
@@ -100,7 +100,7 @@ Authorization: Bearer {token} (opcional)
 ### 3. POST /transcricoes - Criar nova transcrição
 
 **Método:** `POST`  
-**URL:** `http://localhost:3001/transcricoes`
+**URL:** `http://127.0.0.1:3001/transcricoes`
 
 **Headers:**
 ```
@@ -148,11 +148,11 @@ Authorization: Bearer {token} (opcional)
 ### 4. PUT /transcricoes/:id - Atualizar transcrição
 
 **Método:** `PUT`  
-**URL:** `http://localhost:3001/transcricoes/{id}`
+**URL:** `http://127.0.0.1:3001/transcricoes/{id}`
 
 **Exemplo de URL:**
 ```
-http://localhost:3001/transcricoes/clxtrans123
+http://127.0.0.1:3001/transcricoes/clxtrans123
 ```
 
 **Headers:**
@@ -202,11 +202,11 @@ Authorization: Bearer {token} (opcional)
 ### 5. DELETE /transcricoes/:id - Deletar transcrição
 
 **Método:** `DELETE`  
-**URL:** `http://localhost:3001/transcricoes/{id}`
+**URL:** `http://127.0.0.1:3001/transcricoes/{id}`
 
 **Exemplo de URL:**
 ```
-http://localhost:3001/transcricoes/clxtrans123
+http://127.0.0.1:3001/transcricoes/clxtrans123
 ```
 
 **Headers:**

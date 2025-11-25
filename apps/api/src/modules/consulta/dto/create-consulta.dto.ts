@@ -30,8 +30,13 @@ export class CreateConsultaBody {
     @IsString()
     sugestao_IA?: string;
 
+
     @IsOptional()
     @IsString()
-    transcricao_id?: string;
+    transcricao?: string;
+
+    @IsOptional()
+    @IsString()
+    anotacoes?: string;
 }
 

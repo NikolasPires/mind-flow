@@ -4,6 +4,7 @@ export enum ConsultaStatus {
     CONFIRMADO = 'CONFIRMADO',
     CANCELADO = 'CANCELADO',
     A_CONFIRMAR = 'A_CONFIRMAR',
+    CONCLUIDA = 'CONCLUIDA',
 }
 
 interface ConsultaSchema {
@@ -15,7 +16,8 @@ interface ConsultaSchema {
     tags: string[];
     status: ConsultaStatus;
     sugestao_IA?: string | null;
-    transcricao_id?: string | null;
+    transcricao?: string | null;
+    anotacoes?: string | null;
     created_at: Date;
     updatedAt: Date;
 }
@@ -100,11 +102,18 @@ export class Consulta {
         this.props.sugestao_IA = sugestao_IA;
     }
 
-    get transcricao_id(): string | null | undefined {
-        return this.props.transcricao_id;
+    get transcricao(): string | null | undefined {
+        return this.props.transcricao;
     }
-    set transcricao_id(transcricao_id: string | null | undefined) {
-        this.props.transcricao_id = transcricao_id;
+    set transcricao(transcricao: string | null | undefined) {
+        this.props.transcricao = transcricao;
+    }
+
+    get anotacoes(): string | null | undefined {
+        return this.props.anotacoes;
+    }
+    set anotacoes(anotacoes: string | null | undefined) {
+        this.props.anotacoes = anotacoes;
     }
 }
 

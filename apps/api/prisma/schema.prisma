@@ -37,6 +37,7 @@ enum ConsultaStatus {
   CONFIRMADO
   CANCELADO
   A_CONFIRMAR
+  CONCLUIDA
 }
 
 enum TranscricaoStatus {
@@ -100,8 +101,9 @@ model Consulta {
   categoria     String
   tags          String[]
   status        ConsultaStatus @default(A_CONFIRMAR)
-  sugestao_IA   String?
-  transcricao_id String?
+  sugestao_IA   String?        @db.Text
+  transcricao   String?        @db.Text
+  anotacoes     String?        @db.Text
   created_at    DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }

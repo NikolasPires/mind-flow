@@ -5,7 +5,9 @@ import { Gender, Paciente } from "../entities/Paciente";
 import { UserRepository } from "../repositories/UserRepository";
 import { PacienteRepository } from "../repositories/PacienteRepository";
 import { PrismaService } from "src/database/prisma/prisma.service";
-import { createHash } from 'crypto'; 
+import { createHash } from 'crypto';
+
+// 1. ADICIONADO: phone opcional na interface
 interface CreatePacienteWithPsicologoRequest {
     email: string;
     name: string;
@@ -13,6 +15,7 @@ interface CreatePacienteWithPsicologoRequest {
     cpf: string;
     gender: Gender;
     psicologoId: string;
+    phone?: string; 
 }
 
 @Injectable()
@@ -23,7 +26,8 @@ export class CreatePacienteWithPsicologoUseCase {
         private prisma: PrismaService,
     ) {}
 
-    async execute({ email, name, password, cpf, gender, psicologoId }: CreatePacienteWithPsicologoRequest): Promise<User> {
+    // 2. ADICIONADO: phone na desestruturação dos parâmetros
+    async execute({ email, name, password, cpf, gender, psicologoId, phone }: CreatePacienteWithPsicologoRequest): Promise<User> {
         const psicologo = await this.prisma.psicologo.findUnique({
             where: { userId: psicologoId },
         });
@@ -52,14 +56,17 @@ export class CreatePacienteWithPsicologoUseCase {
             name,
             password: await hash(password, 10),
             role: Role.PACIENTE,
+            phone: phone, // 3. ADICIONADO: Passando o telefone para a entidade User
         });
+
         const paciente = new Paciente({
             userId: user.id,
-            cpf,
+            cpf, // Nota: Neste arquivo você não está usando a criptografia (EncryptionService) como no outro. Se precisar, lembre-se de importar.
             gender,
             cpfHash: cpfHash,
             psicologo_responsavel_id: psicologoId,
         });
+        
         await this.userRepository.create(user, paciente);
 
         return user;

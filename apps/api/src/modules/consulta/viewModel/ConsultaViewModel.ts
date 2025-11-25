@@ -23,7 +23,8 @@ export class ConsultaViewModel {
             tags: consulta.tags,
             status: consulta.status,
             sugestao_IA: consulta.sugestao_IA,
-            transcricao_id: consulta.transcricao_id,
+            transcricao: consulta.transcricao,
+            anotacoes: consulta.anotacoes,
             created_at: created_at.toISOString(),
             updatedAt: updatedAt.toISOString(),
         };
@@ -42,9 +43,6 @@ export class ConsultaViewModel {
             ? (consulta.updatedAt instanceof Date ? consulta.updatedAt : new Date(consulta.updatedAt))
             : new Date();
 
-        const consultaData: any = consulta;
-        const transcricaoData = consultaData.transcricao;
-
         return {
             id: consulta.id,
             paciente_id: consulta.paciente_id,
@@ -57,7 +55,8 @@ export class ConsultaViewModel {
             tags: consulta.tags,
             status: consulta.status,
             sugestao_IA: consulta.sugestao_IA,
-            transcricao_id: consulta.transcricao_id,
+            transcricao: consulta.transcricao,
+            anotacoes: consulta.anotacoes,
             created_at: created_at.toISOString(),
             updatedAt: updatedAt.toISOString(),
         };

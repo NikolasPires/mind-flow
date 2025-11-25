@@ -34,7 +34,7 @@ async function bootstrap() {
       ? true // Permite todas as origens em desenvolvimento
       : (process.env.FRONT_END_URL 
           ? process.env.FRONT_END_URL.split(',')
-          : ['http://localhost:3000']),
+          : ['http://127.0.0.1:3000']),
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
@@ -53,7 +53,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 
-  console.log(`🚀 Server running on ${protocol}://localhost:${port}`);
+  console.log(`🚀 Server running on ${protocol}://127.0.0.1:${port}`);
 }
 
 bootstrap();

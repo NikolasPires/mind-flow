@@ -12,7 +12,8 @@ interface UpdateConsultaRequest {
     tags?: string[];
     status?: ConsultaStatus;
     sugestao_IA?: string;
-    transcricao_id?: string;
+    transcricao?: string;
+    anotacoes?: string;
 }
 
 @Injectable()
@@ -22,7 +23,18 @@ export class UpdateConsultaUseCase {
         private prisma: PrismaService,
     ) {}
 
-    async execute({ id, paciente_id, horario, tipo, categoria, tags, status, sugestao_IA, transcricao_id }: UpdateConsultaRequest): Promise<Consulta> {
+    async execute({
+        id,
+        paciente_id,
+        horario,
+        tipo,
+        categoria,
+        tags,
+        status,
+        sugestao_IA,
+        transcricao,
+        anotacoes,
+    }: UpdateConsultaRequest): Promise<Consulta> {
         // Buscar consulta existente
         const consultaExistente = await this.consultaRepository.findById(id);
 
@@ -49,7 +61,8 @@ export class UpdateConsultaUseCase {
         if (tags !== undefined) consultaExistente.tags = tags;
         if (status !== undefined) consultaExistente.status = status;
         if (sugestao_IA !== undefined) consultaExistente.sugestao_IA = sugestao_IA;
-        if (transcricao_id !== undefined) consultaExistente.transcricao_id = transcricao_id;
+        if (transcricao !== undefined) consultaExistente.transcricao = transcricao;
+        if (anotacoes !== undefined) consultaExistente.anotacoes = anotacoes;
 
         await this.consultaRepository.update(consultaExistente);
 

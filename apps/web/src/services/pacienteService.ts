@@ -15,20 +15,35 @@ export interface Paciente {
   history: string | null;
   status: 'ATIVO' | 'ACOMPANHAMENTO' | 'ALTA' | 'INATIVO';
   psicologo_responsavel_id: string | null;
+  last_session?: string | null;
 }
 
-export interface PatientSession {
+export type ConsultaStatusApi = 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR' | 'CONCLUIDA';
+
+export interface ConsultaResumo {
   id: string;
-  date: string;
-  type: string;
-  status: 'PENDENTE' | 'CONCLUIDA' | 'CANCELADA';
-  notes?: {
-    subjective?: string;
-    objective?: string;
-    assessment?: string;
-    plan?: string;
+  paciente_id: string;
+  horario: string;
+  tipo: string;
+  categoria: string;
+  tags: string[];
+  status: ConsultaStatusApi;
+  sugestao_IA?: string | null;
+  transcricao?: string | null;
+  anotacoes?: string | null;
+  created_at: string;
+  updatedAt: string;
+}
+
+export interface PacienteDetails extends Paciente {
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    photo_url?: string | null;
   };
-  transcricao_id?: string;
+  consultas?: ConsultaResumo[];
 }
 
 export interface Transcricao {
@@ -43,7 +58,7 @@ export interface Transcricao {
 // Normalizar URL do backend
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
-  if (!envUrl) return 'http://localhost:3001';
+  if (!envUrl) return 'http://127.0.0.1:3001';
   let url = envUrl.trim();
   if (url.endsWith('/')) url = url.slice(0, -1);
   if (!url.startsWith('http://') && !url.startsWith('https://')) url = `http://${url}`;
@@ -66,8 +81,8 @@ export const pacienteService = {
     return response.data;
   },
 
-  async getPacienteById(id: string, token: string): Promise<Paciente> {
-    const response = await api.get<Paciente>(`/patients/${id}`, {
+  async getPacienteById(id: string, token: string): Promise<PacienteDetails> {
+    const response = await api.get<PacienteDetails>(`/patients/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -89,20 +104,6 @@ export const pacienteService = {
   // ===============================
   // Sessões
   // ===============================
-  async listSessions(patientId: string, token: string): Promise<PatientSession[]> {
-    const response = await api.get<PatientSession[]>(`/patients/${patientId}/sessions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  },
-
-  async getSessionById(sessionId: string, token: string): Promise<PatientSession> {
-    const response = await api.get<PatientSession>(`/sessions/${sessionId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  },
-
   // ===============================
   // Transcrições
   // ===============================
