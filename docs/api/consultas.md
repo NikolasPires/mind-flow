@@ -6,7 +6,7 @@ Guia completo para testar as rotas da API de Consulta no Postman.
 
 ### Base URL
 ```
-http://localhost:3001
+http://127.0.0.1:3001
 ```
 
 ### Headers Padrão
@@ -22,7 +22,7 @@ Authorization: Bearer {seu_token_aqui} (opcional)
 ### 1. GET /consultas - Listar todas as consultas
 
 **Método:** `GET`  
-**URL:** `http://localhost:3001/consultas`
+**URL:** `http://127.0.0.1:3001/consultas`
 
 **Headers:**
 ```
@@ -75,7 +75,7 @@ Authorization: Bearer {token} (opcional)
 ### 2. POST /consultas - Criar nova consulta
 
 **Método:** `POST`  
-**URL:** `http://localhost:3001/consultas`
+**URL:** `http://127.0.0.1:3001/consultas`
 
 **Headers:**
 ```
@@ -152,11 +152,11 @@ Authorization: Bearer {token} (opcional)
 ### 3. PUT /consultas/:id - Atualizar consulta
 
 **Método:** `PUT`  
-**URL:** `http://localhost:3001/consultas/{id}`
+**URL:** `http://127.0.0.1:3001/consultas/{id}`
 
 **Exemplo de URL:**
 ```
-http://localhost:3001/consultas/clx9876543210
+http://127.0.0.1:3001/consultas/clx9876543210
 ```
 
 **Headers:**
@@ -217,11 +217,11 @@ Authorization: Bearer {token} (opcional)
 ### 4. DELETE /consultas/:id - Deletar consulta
 
 **Método:** `DELETE`  
-**URL:** `http://localhost:3001/consultas/{id}`
+**URL:** `http://127.0.0.1:3001/consultas/{id}`
 
 **Exemplo de URL:**
 ```
-http://localhost:3001/consultas/clx9876543210
+http://127.0.0.1:3001/consultas/clx9876543210
 ```
 
 **Headers:**
@@ -304,7 +304,7 @@ Emergência
 Crie um Environment com as seguintes variáveis:
 
 ```
-base_url: http://localhost:3001
+base_url: http://127.0.0.1:3001
 token: seu_token_aqui
 ```
 

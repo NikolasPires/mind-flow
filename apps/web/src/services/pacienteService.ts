@@ -43,7 +43,7 @@ export interface Transcricao {
 // Normalizar URL do backend
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
-  if (!envUrl) return 'http://localhost:3001';
+  if (!envUrl) return 'http://127.0.0.1:3001';
   let url = envUrl.trim();
   if (url.endsWith('/')) url = url.slice(0, -1);
   if (!url.startsWith('http://') && !url.startsWith('https://')) url = `http://${url}`;

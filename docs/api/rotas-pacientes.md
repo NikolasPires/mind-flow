@@ -116,7 +116,7 @@ O usuário autenticado não é um psicólogo ou não foi encontrado.
 #### cURL
 
 ```bash
-curl -X GET http://localhost:3001/users/patients \
+curl -X GET http://127.0.0.1:3001/users/patients \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -124,7 +124,7 @@ curl -X GET http://localhost:3001/users/patients \
 #### JavaScript (Fetch)
 
 ```javascript
-const response = await fetch('http://localhost:3001/users/patients', {
+const response = await fetch('http://127.0.0.1:3001/users/patients', {
   method: 'GET',
   headers: {
     'Authorization': `Bearer ${token}`,
@@ -141,7 +141,7 @@ console.log(pacientes);
 ```javascript
 import axios from 'axios';
 
-const response = await axios.get('http://localhost:3001/users/patients', {
+const response = await axios.get('http://127.0.0.1:3001/users/patients', {
   headers: {
     'Authorization': `Bearer ${token}`
   }
@@ -310,7 +310,7 @@ ou
 #### cURL
 
 ```bash
-curl -X POST http://localhost:3001/users/patients \
+curl -X POST http://127.0.0.1:3001/users/patients \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -325,7 +325,7 @@ curl -X POST http://localhost:3001/users/patients \
 #### JavaScript (Fetch)
 
 ```javascript
-const response = await fetch('http://localhost:3001/users/patients', {
+const response = await fetch('http://127.0.0.1:3001/users/patients', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${token}`,

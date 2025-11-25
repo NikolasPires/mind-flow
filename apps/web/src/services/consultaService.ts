@@ -50,7 +50,7 @@ export interface UpdateConsultaData {
 // Normalizar a URL do backend (remove trailing slash e garante http://)
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_DB_HOST;
-  if (!envUrl) return 'http://localhost:3001';
+  if (!envUrl) return 'http://127.0.0.1:3001';
   
   let url = envUrl.trim();
   // Remove trailing slash
@@ -62,7 +62,7 @@ const getBaseURL = () => {
     url = `http://${url}`;
   }
   // Para desenvolvimento local, força http:// mesmo se configurado como https://
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+  if (url.includes('127.0.0.1') || url.includes('127.0.0.1')) {
     url = url.replace('https://', 'http://');
   }
   
