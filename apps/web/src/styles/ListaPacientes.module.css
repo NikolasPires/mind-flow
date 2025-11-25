@@ -37,7 +37,7 @@
 }
 
 .newPatientButton {
-  background-color: #008080;
+  background-color: var(--primary-color, #00897b);
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
@@ -53,7 +53,7 @@
 }
 
 .newPatientButton:hover {
-  background-color: #006666;
+  background-color: #00695c;
 }
 
 .buttonIcon {
@@ -72,7 +72,6 @@
   background-color: #fff;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   text-decoration: none;

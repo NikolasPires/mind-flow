@@ -1,8 +1,10 @@
-/* src/styles/Sidebar.module.css */
+/* ============================ */
+/*      ESTILO BASE DO SIDEBAR  */
+/* ============================ */
+
 .sidebar {
   width: 250px;
-  /* Cor principal, baseada no overlay da tela de login */
-  background-color: #004d4d; 
+  background-color: #004d4d;
   color: #ffffff;
   padding: 20px 0;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
@@ -11,8 +13,9 @@
   top: 0;
   left: 0;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
+  display: flex;              /* Necessário para prender o logout embaixo */
+  flex-direction: column;     /* Organiza elementos em coluna */
+  transition: transform 0.3s ease-in-out;
 }
 
 .logoContainer {
@@ -36,118 +39,132 @@
   margin-bottom: 5px;
 }
 
-/* Estilo do Link (agora com className no componente Link) */
+/* Link */
 .navLink {
   display: flex;
   align-items: center;
-  padding: 14px 30px; /* Aumentei um pouco o padding */
-  color: #e0e0e0; /* Um branco suave para o texto padrão */
+  padding: 14px 30px;
+  color: #e0e0e0;
   text-decoration: none;
   font-size: 16px;
   font-weight: 500;
   transition: all 0.2s ease-in-out;
-  border-left: 4px solid transparent; /* Borda esquerda para o item ativo */
+  border-left: 4px solid transparent;
 }
 
-/* Efeito Hover */
+/* Hover */
 .navLink:hover {
-  /* Cor de hover do botão de login */
-  background-color: #006666; 
+  background-color: #006666;
   color: #ffffff;
 }
 
-/* Estilo do Ícone */
+/* Ícone */
 .icon {
-  font-size: 1.2rem; /* Tamanho do ícone */
-  margin-right: 15px; /* Espaçamento entre o ícone e o texto */
+  font-size: 1.2rem;
+  margin-right: 15px;
   flex-shrink: 0;
 }
 
-/* Item Ativo da Navegação */
+/* Item ativo */
 .navigation li.active .navLink {
-  /* Cor de ação do botão de login */
   background-color: #008080;
   color: #ffffff;
   font-weight: 600;
-  border-left-color: #38ef7d; /* Um verde brilhante para destacar ainda mais */
+  border-left-color: #38ef7d;
 }
 
-/* src/styles/Sidebar.module.css */
-/* ... (Seus estilos existentes) ... */
-
-/* Classe para o Sidebar quando está escondido (padrão em mobile/tablet) */
-.sidebar {
-  /* ... (Seus estilos existentes) ... */
-  transition: transform 0.3s ease-in-out; /* Adiciona a transição para o deslize */
-}
-
-/* Classe 'open' adicionada pelo React */
+/* Sidebar aberta (mobile) */
 .sidebar.open {
   transform: translateX(0);
 }
 
-/* Novo estilo para o botão hambúrguer (escondido por padrão) */
+/* ============================ */
+/*   BOTÃO HAMBÚRGUER (MOBILE)  */
+/* ============================ */
+
 .hamburgerButton {
-    display: none; /* Esconde o botão por padrão em desktop */
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1010; /* Acima do Sidebar e do Overlay */
-    background: #00897b;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 24px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1010;
+  background: #00897b;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Novo estilo para o Overlay (fundo escuro) */
+/* Overlay */
 .sidebarOverlay {
-    display: none; /* Esconde por padrão */
+  display: none;
 }
 
-/* ============================================== */
-/* ========= RESPONSIVIDADE PARA TABLETS E CELULARES (MÁXIMO 1024px) ========= */
-/* ============================================== */
+/* ============================ */
+/*         LOGOUT FIXADO       */
+/* ============================ */
+
+.logoutContainer {
+  margin-top: auto; /* Empurra para baixo */
+  padding: 15px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.logoutButton {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #ffecec;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  padding: 14px 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+}
+
+.logoutButton svg {
+  font-size: 1.3rem;
+}
+
+/* Hover estilizado */
+.logoutButton:hover {
+  background-color: #cc4c4c;
+  color: white;
+  transform: translateX(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================ */
+/*      RESPONSIVIDADE         */
+/* ============================ */
 
 @media (max-width: 1024px) {
-    /* 1. Esconde o Sidebar por padrão (desliza para fora da tela) */
-    .sidebar {
-        /* Desloca o menu para a esquerda pelo seu próprio tamanho (250px) */
-        transform: translateX(-250px); 
-        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* 2. Mostra o botão hambúrguer */
-    .hamburgerButton {
-        display: flex; /* Torna o botão visível */
-        align-items: center;
-        justify-content: center;
-    }
 
-    /* 3. Estilo do Overlay (fundo escuro) */
-    .sidebarOverlay {
-        display: block; /* Visível apenas quando necessário */
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6); /* Fundo semi-transparente */
-        z-index: 999; /* Fica entre o conteúdo e o menu */
-    }
-    
-    /* 4. Ocupa o restante da tela (Opcional, dependendo de como está o Layout)
-       Se você tiver um layout principal, ele precisará de um padding para o botão.
-       Como não vi o layout, esse ajuste deve ser feito no componente que 
-       envolve todo o conteúdo da página. Por exemplo, se o conteúdo principal
-       estiver envolto por um .mainContent:
-       
-       .mainContent {
-           padding-left: 0;  // Remove o padding para o sidebar de desktop
-           padding-top: 60px; // Adiciona espaço para o botão hambúrguer
-       } 
-    */
+  .sidebar {
+    transform: translateX(-250px); /* Esconde menu */
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .hamburgerButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+  }
 }

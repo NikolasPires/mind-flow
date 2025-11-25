@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Box,
   Typography,
@@ -16,109 +17,363 @@ import {
   DialogContent,
   DialogActions,
   Divider,
+  TextField,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   ChevronLeft,
   ChevronRight,
   Add,
+  Edit,
+  Delete,
 } from '@mui/icons-material';
+import { FiPlus } from 'react-icons/fi';
 import styles from '../styles/Agenda.module.css';
+import { consultaService, Consulta } from '../services/consultaService';
+import { pacienteService, Paciente } from '../services/pacienteService';
+import { NextPageWithAuth } from '@/types/page-auth';
+import CreatePatientForm from '../components/CreatePatientForm';
 
-const Agenda: React.FC = () => {
+interface Appointment {
+  id: string | number;
+  time: string;
+  startTime: number;
+  endTime: number;
+  patient: string;
+  type: string;
+  status: 'CONFIRMADO' | 'CANCELADO' | 'A_CONFIRMAR';
+  statusColor: 'success' | 'warning' | 'error';
+  dataDaConsulta: string;
+  category: string;
+  tags: string[];
+}
+
+const Agenda: NextPageWithAuth = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+  const { data: session, status: sessionStatus } = useSession();
+
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [newConsulta, setNewConsulta] = useState({
+    paciente_id: '',
+    horario: '',
+    tipo: '',
+    categoria: '',
+    tags: [] as string[],
+    tagInput: '',
+  });
+  
+  // Estados para edição
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editConsulta, setEditConsulta] = useState({
+    id: '',
+    paciente_id: '',
+    horario: '',
+    tipo: '',
+    categoria: '',
+    tags: [] as string[],
+    tagInput: '',
+  });
 
-  const mockAppointments = [
-  {
-    id: 1,
-    time: '10:00 - 11:00',
-    startTime: 10, // Hora em formato numérico
-    endTime: 11,   // Hora em formato numérico
-    patient: 'Beatriz Costa',
-    type: 'Terapia Online',
-    status: 'CONFIRMADO',
-    statusColor: 'success',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 1).toISOString(), // 1 dia a partir de agora
-    category: 'Consulta inicial',
-    tags: ['online', 'nova'],
-  },
-  {
-    id: 2,
-    time: '14:00 - 15:00',
-    startTime: 14, // Hora em formato numérico
-    endTime: 15,   // Hora em formato numérico
-    patient: 'Beatiiz Costa',
-    type: 'Terapia Online',
-    status: 'CONFIRMADO',
-    statusColor: 'success',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 3).toISOString(), // 3 dias a partir de agora
-    category: 'Acompanhamento',
-    tags: ['retorno'],
-  },
-  {
-    id: 3,
-    time: '14:00 - 15:00',
-    startTime: 14, // Hora em formato numérico
-    endTime: 15,   // Hora em formato numérico
-    patient: 'Abel Ferreira',
-    type: 'Terapia Cognitivo-Comportamental',
-    status: 'A CONFIRMAR',
-    statusColor: 'warning',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 5).toISOString(), // 5 dias a partir de agora
-    category: 'Avaliação',
-    tags: ['presencial', 'avaliacao'],
-  },
-  {
-    id: 4,
-    time: '09:00 - 10:00',
-    startTime: 9,  // Hora em formato numérico
-    endTime: 10,   // Hora em formato numérico
-    patient: 'Carlos Silva',
-    type: 'Terapia de Grupo',
-    status: 'CONFIRMADO',
-    statusColor: 'success',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 7).toISOString(), // 7 dias a partir de agora
-    category: 'Consulta de Grupo',
-    tags: ['grupo', 'presencial'],
-  },
-  {
-    id: 5,
-    time: '16:00 - 17:00',
-    startTime: 16, // Hora em formato numérico
-    endTime: 17,   // Hora em formato numérico
-    patient: 'Maria Oliveira',
-    type: 'Terapia Online',
-    status: 'A CONFIRMAR',
-    statusColor: 'warning',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 10).toISOString(), // 10 dias a partir de agora
-    category: 'Consulta de Acompanhamento',
-    tags: ['online'],
-  },
-  {
-    id: 6,
-    time: '13:00 - 14:00',
-    startTime: 13, // Hora em formato numérico
-    endTime: 14,   // Hora em formato numérico
-    patient: 'José da Silva',
-    type: 'Terapia Online',
-    status: 'A CONFIRMAR',
-    statusColor: 'warning',
-    dataDaConsulta: new Date(Date.now() + 86400000 * 2).toISOString(), // 10 dias a partir de agora
-    category: 'Consulta de Acompanhamento',
-    tags: ['online'],
-  },
-];
 
+  // Carregar consultas da API
+  useEffect(() => {
+    // Espera a sessão carregar completamente
+    if (sessionStatus === 'loading') {
+      setLoading(true);
+      return;
+    }
+
+    // Se não houver sessão após carregar, desativa loading
+    if (sessionStatus === 'unauthenticated' || !session) {
+      setLoading(false);
+      setError('Você precisa estar autenticado para ver as consultas');
+      return;
+    }
+
+    // Se tiver sessão, carrega as consultas e pacientes
+    if (sessionStatus === 'authenticated' && session) {
+      loadConsultas();
+      loadPacientes();
+    }
+  }, [session, sessionStatus]);
+
+  const loadPacientes = async () => {
+    if (!session) return;
+
+    try {
+      const token = session.accessToken as string;
+
+      if (!token) {
+        console.warn('Token não encontrado para carregar pacientes');
+        return;
+      }
+
+      const data = await pacienteService.listPacientes(token);
+      setPacientes(data);
+    } catch (err: any) {
+      console.error('Erro ao carregar pacientes:', err);
+      // Não mostra erro ao usuário, apenas log
+      setPacientes([]);
+    }
+  };
+
+  const loadConsultas = async () => {
+    if (!session) {
+      setError('Você precisa estar autenticado para carregar consultas');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const token = session.accessToken as string;
+
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      const data = await consultaService.listConsultas(token);
+      setConsultas(data);
+
+      // Converter consultas da API para o formato usado pela agenda
+      const convertedAppointments: Appointment[] = data.map((consulta) => {
+        const horario = new Date(consulta.horario);
+        const startTime = horario.getHours();
+        const endTime = startTime + 1; // Assumindo duração de 1 hora por padrão
+
+        const timeStr = `${startTime.toString().padStart(2, '0')}:00 - ${endTime.toString().padStart(2, '0')}:00`;
+
+        const statusColor = consulta.status === 'CONFIRMADO' ? 'success' :
+          consulta.status === 'CANCELADO' ? 'error' : 'warning';
+
+        return {
+          id: consulta.id,
+          time: timeStr,
+          startTime,
+          endTime,
+          patient: consulta.paciente?.name || 'Paciente não encontrado',
+          type: consulta.tipo,
+          status: consulta.status,
+          statusColor,
+          dataDaConsulta: consulta.horario,
+          category: consulta.categoria,
+          tags: consulta.tags,
+        };
+      });
+
+      setAppointments(convertedAppointments);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar consultas');
+      console.error('Erro ao carregar consultas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateConsulta = async () => {
+    try {
+      setCreateLoading(true);
+      setError(null);
+
+      
+
+      // Validação mais robusta do paciente_id
+      if (!newConsulta.paciente_id || newConsulta.paciente_id.trim() === '' || newConsulta.paciente_id === 'undefined' || newConsulta.paciente_id === 'null') {
+        setError('Por favor, selecione um paciente');
+        setCreateLoading(false);
+        return;
+      }
+
+      if (!newConsulta.horario || !newConsulta.tipo || !newConsulta.categoria) {
+        setError('Preencha todos os campos obrigatórios');
+        setCreateLoading(false);
+        return;
+      }
+
+      const token = session?.accessToken as string;
+      const consultaData = {
+        paciente_id: String(newConsulta.paciente_id).trim(),
+        horario: newConsulta.horario,
+        tipo: newConsulta.tipo,
+        categoria: newConsulta.categoria,
+        tags: newConsulta.tags,
+      };
+
+
+      await consultaService.createConsulta(consultaData, token);
+
+      setOpenCreateModal(false);
+      setNewConsulta({
+        paciente_id: '',
+        horario: '',
+        tipo: '',
+        categoria: '',
+        tags: [],
+        tagInput: '',
+      });
+      await loadConsultas(); // Recarregar consultas
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar consulta');
+      console.error('Erro ao criar consulta:', err);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const addTag = () => {
+    if (newConsulta.tagInput.trim() && !newConsulta.tags.includes(newConsulta.tagInput.trim())) {
+      setNewConsulta({
+        ...newConsulta,
+        tags: [...newConsulta.tags, newConsulta.tagInput.trim()],
+        tagInput: '',
+      });
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setNewConsulta({
+      ...newConsulta,
+      tags: newConsulta.tags.filter(t => t !== tag),
+    });
+  };
+
+  // Funções para editar consulta
+  const handleOpenEditModal = (appointment: Appointment) => {
+    // Encontrar a consulta completa pelo id
+    const consulta = consultas.find(c => c.id === appointment.id);
+    if (consulta) {
+      // Converter o horário para o formato datetime-local
+      const horarioDate = new Date(consulta.horario);
+      const horarioLocal = new Date(horarioDate.getTime() - horarioDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      
+      // Encontrar o paciente_id correspondente
+      const paciente = pacientes.find(p => p.name === appointment.patient);
+      
+      setEditConsulta({
+        id: consulta.id,
+        paciente_id: consulta.paciente_id || paciente?.id || '',
+        horario: horarioLocal,
+        tipo: consulta.tipo,
+        categoria: consulta.categoria,
+        tags: consulta.tags || [],
+        tagInput: '',
+      });
+      setOpenEditModal(true);
+      setOpenModal(false); // Fechar modal de detalhes
+    }
+  };
+
+  const handleUpdateConsulta = async () => {
+    try {
+      setEditLoading(true);
+      setError(null);
+
+      if (!editConsulta.paciente_id || editConsulta.paciente_id.trim() === '' || editConsulta.paciente_id === 'undefined' || editConsulta.paciente_id === 'null') {
+        setError('Por favor, selecione um paciente');
+        setEditLoading(false);
+        return;
+      }
+
+      if (!editConsulta.horario || !editConsulta.tipo || !editConsulta.categoria) {
+        setError('Preencha todos os campos obrigatórios');
+        setEditLoading(false);
+        return;
+      }
+
+      const token = session?.accessToken as string;
+      const consultaData = {
+        paciente_id: String(editConsulta.paciente_id).trim(),
+        horario: editConsulta.horario,
+        tipo: editConsulta.tipo,
+        categoria: editConsulta.categoria,
+        tags: editConsulta.tags,
+      };
+
+      await consultaService.updateConsulta(editConsulta.id, consultaData, token);
+
+      setOpenEditModal(false);
+      setEditConsulta({
+        id: '',
+        paciente_id: '',
+        horario: '',
+        tipo: '',
+        categoria: '',
+        tags: [],
+        tagInput: '',
+      });
+      await loadConsultas(); // Recarregar consultas
+    } catch (err: any) {
+      setError(err.message || 'Erro ao atualizar consulta');
+      console.error('Erro ao atualizar consulta:', err);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteConsulta = async (appointmentId: string | number) => {
+    if (!confirm('Tem certeza que deseja excluir este agendamento?')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const token = session?.accessToken as string;
+      await consultaService.deleteConsulta(String(appointmentId), token);
+      setOpenModal(false); // Fechar modal de detalhes
+      await loadConsultas(); // Recarregar consultas
+    } catch (err: any) {
+      setError(err.message || 'Erro ao excluir consulta');
+      console.error('Erro ao excluir consulta:', err);
+    }
+  };
+
+  const addEditTag = () => {
+    if (editConsulta.tagInput.trim() && !editConsulta.tags.includes(editConsulta.tagInput.trim())) {
+      setEditConsulta({
+        ...editConsulta,
+        tags: [...editConsulta.tags, editConsulta.tagInput.trim()],
+        tagInput: '',
+      });
+    }
+  };
+
+  const removeEditTag = (tag: string) => {
+    setEditConsulta({
+      ...editConsulta,
+      tags: editConsulta.tags.filter(t => t !== tag),
+    });
+  };
 
   // Modal state
   const [openModal, setOpenModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<typeof mockAppointments[0] | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedOccurrenceDate, setSelectedOccurrenceDate] = useState<Date | null>(null);
+  const [openCreatePatientModal, setOpenCreatePatientModal] = useState(false);
+
+  const handlePatientCreated = async () => {
+    await loadPacientes();
+    setOpenCreatePatientModal(false);
+  };
 
   // Handlers do modal
-  const handleOpenModal = (appointment: typeof mockAppointments[0], occurrenceDate?: Date) => {
+  const handleOpenModal = (appointment: Appointment, occurrenceDate?: Date) => {
     setSelectedAppointment(appointment);
     setSelectedOccurrenceDate(occurrenceDate ?? null);
     setOpenModal(true);
@@ -141,7 +396,7 @@ const Agenda: React.FC = () => {
     const d = new Date(date);
     const diffToMonday = (d.getDay() + 6) % 7; // 0=Dom -> 6, 1=Seg ->0
     d.setDate(d.getDate() - diffToMonday);
-    d.setHours(0,0,0,0);
+    d.setHours(0, 0, 0, 0);
     return d;
   };
 
@@ -181,7 +436,7 @@ const Agenda: React.FC = () => {
   // Obter agendamentos do dia (index 0..6)
   const getAppointmentsForDay = (dayIndex: number) => {
     const weekStart = getWeekStart(currentDate);
-    return mockAppointments.filter(appointment => {
+    return appointments.filter(appointment => {
       const appointmentDate = new Date(appointment.dataDaConsulta);
       const apDayIndex = (appointmentDate.getDay() + 6) % 7; // segunda = 0
       return apDayIndex === dayIndex && appointmentDate >= weekStart && appointmentDate < new Date(weekStart.getTime() + 7 * 86400000);
@@ -190,7 +445,7 @@ const Agenda: React.FC = () => {
 
   // Posição vertical/altura (corrigido para iniciar em 08:00)
   const getAppointmentPosition = (startTime: number) => {
-    return (startTime - 8) * 60; // 08:00 = top 0
+    return (startTime - 9) * 60; // 08:00 = top 0
   };
   const getAppointmentHeight = (startTime: number, endTime: number) => {
     return (endTime - startTime) * 60;
@@ -199,22 +454,22 @@ const Agenda: React.FC = () => {
   // Gera próximas consultas para os próximos N dias, agrupadas por data
   const getUpcomingAppointments = (daysAhead = 21) => {
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     // precria o mapa de dias futuros
-    const map: Record<string, { date: Date; items: typeof mockAppointments }> = {};
+    const map: Record<string, { date: Date; items: Appointment[] }> = {};
     for (let i = 0; i < daysAhead; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      const key = d.toISOString().slice(0,10); // YYYY-MM-DD
-      map[key] = { date: d, items: [] as any };
+      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      map[key] = { date: d, items: [] };
     }
 
     // percorre os agendamentos reais e coloca no dia correspondente (comparando date local)
-    mockAppointments.forEach(apt => {
+    appointments.forEach(apt => {
       const apDate = new Date(apt.dataDaConsulta);
-      apDate.setHours(0,0,0,0);
-      const key = apDate.toISOString().slice(0,10);
+      apDate.setHours(0, 0, 0, 0);
+      const key = apDate.toISOString().slice(0, 10);
       if (map[key]) {
         map[key].items.push(apt);
       }
@@ -235,12 +490,26 @@ const Agenda: React.FC = () => {
 
   const upcoming = getUpcomingAppointments(21); // próximos 21 dias
 
-  
-// Mock data para simular a resposta de uma API
+
+  if (loading) {
+    return (
+      <Container maxWidth="xl">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <div className={styles.agendaContainer}>
       <Container maxWidth="xl">
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
         {/* Header da Agenda: título + nav de semana + botão agendar */}
         <Box className={styles.headerSection}>
           <Grid container spacing={2} alignItems="center">
@@ -264,17 +533,37 @@ const Agenda: React.FC = () => {
                   </IconButton>
                 </Stack>
 
-                <Button
+                <Stack direction={isMobile ? 'column' : 'row'} spacing={1} width={isMobile ? '100%' : 'auto'}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<FiPlus size={18} />}
+                    onClick={() => setOpenCreatePatientModal(true)}
+                    sx={{
+                      borderColor: 'var(--primary-color, #00897b)',
+                      color: 'var(--primary-color, #00897b)',
+                      '&:hover': {
+                        borderColor: '#00695c',
+                        color: '#00695c',
+                      },
+                      minWidth: isMobile ? '100%' : 'auto',
+                    }}
+                  >
+                    {isMobile ? 'Novo Paciente' : 'Adicionar Paciente'}
+                  </Button>
+
+                  <Button
                   variant="contained"
                   startIcon={<Add />}
+                  onClick={() => setOpenCreateModal(true)}
                   sx={{
-                    backgroundColor: '#20B2AA',
-                    '&:hover': { backgroundColor: '#1A9B94' },
+                    backgroundColor: 'var(--primary-color, #00897b)',
+                    '&:hover': { backgroundColor: '#00695c' },
                     minWidth: isMobile ? '100%' : 'auto',
                   }}
-                >
-                  {isMobile ? 'Agendar' : 'Agendar Nova Sessão'}
-                </Button>
+                  >
+                    {isMobile ? 'Agendar' : 'Agendar Nova Sessão'}
+                  </Button>
+                </Stack>
               </Stack>
             </Grid>
           </Grid>
@@ -301,7 +590,7 @@ const Agenda: React.FC = () => {
             <Grid item xs={11}>
               <Grid container>
                 {Array.from({ length: 7 }, (_, i) => (
-                  <Grid item xs={12/7} key={i}>
+                  <Grid item xs={12 / 7} key={i}>
                     <Box className={styles.dayHeader}>
                       <Typography className={styles.dayName}>
                         {getDayName(i)}
@@ -337,12 +626,17 @@ const Agenda: React.FC = () => {
                 ))}
 
                 {/* Agendamentos */}
-                {mockAppointments.map((appointment) => {
-                  const weekStart = getWeekStart(currentDate);
-                  const appointmentDate = new Date(appointment.dataDaConsulta);
-                  const dayIndex = (appointmentDate.getDay() + 6) % 7; // Ajusta para segunda como 0
+                {appointments
+                  .filter((appointment) => {
+                    const weekStart = getWeekStart(currentDate);
+                    const appointmentDate = new Date(appointment.dataDaConsulta);
+                    return appointmentDate >= weekStart && appointmentDate < new Date(weekStart.getTime() + 7 * 86400000);
+                  })
+                  .map((appointment) => {
+                    const weekStart = getWeekStart(currentDate);
+                    const appointmentDate = new Date(appointment.dataDaConsulta);
+                    const dayIndex = (appointmentDate.getDay() + 6) % 7; // Ajusta para segunda como 0
 
-                  if (appointmentDate >= weekStart && appointmentDate < new Date(weekStart.getTime() + 7 * 86400000)) {
                     return (
                       <Paper
                         key={appointment.id}
@@ -358,19 +652,28 @@ const Agenda: React.FC = () => {
                         role="button"
                         tabIndex={0}
                       >
-                        <Box>
-                          <Typography className={styles.appointmentTime}>
-                            {appointment.time}
-                          </Typography>
-                          <Typography className={styles.appointmentPatient}>
+                        <Box sx={{ 
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          width: '100%'
+                        }}>
+                          <Typography 
+                            className={styles.appointmentPatient}
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              width: '100%',
+                              maxWidth: '100%'
+                            }}
+                          >
                             {appointment.patient}
                           </Typography>
                         </Box>
                       </Paper>
                     );
-                  }
-                  return null;
-                })}
+                  })}
               </Box>
             </Grid>
           </Grid>
@@ -452,13 +755,623 @@ const Agenda: React.FC = () => {
               <Chip label={selectedAppointment.status} color={selectedAppointment.statusColor as any} size="small" />
             </Stack>
           ) : null}
+                </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1.5 }}>
+          <Button
+            onClick={() => selectedAppointment && handleDeleteConsulta(selectedAppointment.id)}
+            color="error"
+            startIcon={<Delete />}
+            size="small"
+          >
+            Excluir
+          </Button>
+          <Button
+            onClick={() => selectedAppointment && handleOpenEditModal(selectedAppointment)}
+            variant="outlined"
+            startIcon={<Edit />}
+            size="small"
+          >
+            Editar
+          </Button>
+          <Button onClick={handleCloseModal} size="small" sx={{ ml: 'auto' }}>
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openCreatePatientModal}
+        onClose={() => setOpenCreatePatientModal(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Criar Paciente</DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          <CreatePatientForm onSuccess={handlePatientCreated} />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} size="small">Fechar</Button>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setOpenCreatePatientModal(false)}>
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal para criar nova consulta */}
+      <Dialog
+        open={openCreateModal}
+        onClose={() => {
+          setOpenCreateModal(false);
+          // Resetar formulário quando fechar
+          setNewConsulta({
+            paciente_id: '',
+            horario: '',
+            tipo: '',
+            categoria: '',
+            tags: [],
+            tagInput: '',
+          });
+        }}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            marginLeft: { xs: 0, md: '250px' },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '1.75rem' },
+            fontWeight: 600,
+            pb: 2,
+          }}
+        >
+          Criar Nova Consulta
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3.5} sx={{ mt: 1, px: { xs: 0, sm: 1 } }}>
+            <FormControl fullWidth required>
+              <InputLabel
+                id="paciente-select-label"
+                shrink={!!newConsulta.paciente_id}
+                sx={{
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                }}
+              >
+                Paciente
+              </InputLabel>
+              <Select
+                labelId="paciente-select-label"
+                id="paciente-select"
+                value={newConsulta.paciente_id || ''}
+                onChange={(e) => {
+                  const selectedValue = e.target.value;
+                  if (selectedValue !== undefined && selectedValue !== null) {
+                    setNewConsulta((prev) => ({
+                      ...prev,
+                      paciente_id: String(selectedValue),
+                    }));
+                  }
+                }}
+                label="Paciente"
+                disabled={pacientes.length === 0}
+                notched
+                sx={{
+                  fontSize: '1rem',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                    py: 1.5,
+                  },
+                }}
+              >
+                {pacientes.length === 0 ? (
+                  <MenuItem disabled value="">
+                    <em>Nenhum paciente cadastrado</em>
+                  </MenuItem>
+                ) : (
+                  pacientes.map((patient) => (
+                    <MenuItem
+                      key={patient.id}
+                      value={String(patient.id)}
+                      sx={{ fontSize: '1rem' }}
+                    >
+                      {patient.name}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+              {pacientes.length === 0 && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1.5, fontSize: '0.875rem' }}
+                >
+                  Você precisa cadastrar pacientes antes de criar uma consulta.
+                </Typography>
+              )}
+            </FormControl>
+
+            <TextField
+              label="Data e Horário"
+              type="datetime-local"
+              value={newConsulta.horario}
+              onChange={(e) => setNewConsulta({ ...newConsulta, horario: e.target.value })}
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true,
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                  py: 1.5,
+                  '&::-webkit-calendar-picker-indicator': {
+                    cursor: 'pointer',
+                    fontSize: '1.2rem',
+                    marginRight: { xs: 0, sm: 1 },
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <TextField
+              label="Tipo"
+              value={newConsulta.tipo}
+              onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })}
+              fullWidth
+              required
+              placeholder="Ex: Terapia Online, Terapia Presencial"
+              InputLabelProps={{
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <TextField
+              label="Categoria"
+              value={newConsulta.categoria}
+              onChange={(e) => setNewConsulta({ ...newConsulta, categoria: e.target.value })}
+              fullWidth
+              required
+              placeholder="Ex: Consulta inicial, Acompanhamento"
+              InputLabelProps={{
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <Box>
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                sx={{
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  mb: 1.5,
+                }}
+              >
+                Tags
+              </Typography>
+              {newConsulta.tags.length > 0 && (
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  flexWrap="wrap"
+                  sx={{ mb: 2 }}
+                >
+                  {newConsulta.tags.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      onDelete={() => removeTag(tag)}
+                      size="medium"
+                      sx={{
+                        fontSize: '0.875rem',
+                        height: '32px',
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+              <Stack direction="row" spacing={1.5}>
+                <TextField
+                  placeholder="Adicionar tag"
+                  value={newConsulta.tagInput}
+                  onChange={(e) => setNewConsulta({ ...newConsulta, tagInput: e.target.value })}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  fullWidth
+                  inputProps={{
+                    sx: {
+                      fontSize: '1rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1rem',
+                    },
+                  }}
+                />
+                <Button
+                  onClick={addTag}
+                  variant="outlined"
+                  sx={{
+                    fontSize: '0.875rem',
+                    px: 3,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Adicionar
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            gap: 1.5,
+          }}
+        >
+          <Button
+            onClick={() => setOpenCreateModal(false)}
+            disabled={createLoading}
+            sx={{
+              fontSize: '0.9375rem',
+              px: 3,
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCreateConsulta}
+            variant="contained"
+            disabled={createLoading}
+            sx={{
+              fontSize: '0.9375rem',
+              px: 3,
+              minWidth: 140,
+            }}
+          >
+            {createLoading ? <CircularProgress size={24} /> : 'Criar Consulta'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal para editar consulta */}
+      <Dialog
+        open={openEditModal}
+        onClose={() => {
+          setOpenEditModal(false);
+          setEditConsulta({
+            id: '',
+            paciente_id: '',
+            horario: '',
+            tipo: '',
+            categoria: '',
+            tags: [],
+            tagInput: '',
+          });
+        }}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            marginLeft: { xs: 0, md: '250px' },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '1.75rem' },
+            fontWeight: 600,
+            pb: 2,
+          }}
+        >
+          Editar Consulta
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3.5} sx={{ mt: 1, px: { xs: 0, sm: 1 } }}>
+            <FormControl fullWidth required>
+              <InputLabel
+                id="edit-paciente-select-label"
+                shrink={!!editConsulta.paciente_id}
+                sx={{
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                }}
+              >
+                Paciente
+              </InputLabel>
+              <Select
+                labelId="edit-paciente-select-label"
+                id="edit-paciente-select"
+                value={editConsulta.paciente_id || ''}
+                onChange={(e) => {
+                  const selectedValue = e.target.value;
+                  if (selectedValue !== undefined && selectedValue !== null) {
+                    setEditConsulta((prev) => ({
+                      ...prev,
+                      paciente_id: String(selectedValue),
+                    }));
+                  }
+                }}
+                label="Paciente"
+                disabled={pacientes.length === 0}
+                notched
+                sx={{
+                  fontSize: '1rem',
+                  '& .MuiSelect-select': {
+                    fontSize: '1rem',
+                    py: 1.5,
+                  },
+                }}
+              >
+                {pacientes.length === 0 ? (
+                  <MenuItem disabled value="">
+                    <em>Nenhum paciente cadastrado</em>
+                  </MenuItem>
+                ) : (
+                  pacientes.map((patient) => (
+                    <MenuItem
+                      key={patient.id}
+                      value={String(patient.id)}
+                      sx={{ fontSize: '1rem' }}
+                    >
+                      {patient.name}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Data e Horário"
+              type="datetime-local"
+              value={editConsulta.horario}
+              onChange={(e) => setEditConsulta({ ...editConsulta, horario: e.target.value })}
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true,
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                  py: 1.5,
+                  '&::-webkit-calendar-picker-indicator': {
+                    cursor: 'pointer',
+                    fontSize: '1.2rem',
+                    marginRight: { xs: 0, sm: 1 },
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <TextField
+              label="Tipo"
+              value={editConsulta.tipo}
+              onChange={(e) => setEditConsulta({ ...editConsulta, tipo: e.target.value })}
+              fullWidth
+              required
+              placeholder="Ex: Terapia Online, Terapia Presencial"
+              InputLabelProps={{
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <TextField
+              label="Categoria"
+              value={editConsulta.categoria}
+              onChange={(e) => setEditConsulta({ ...editConsulta, categoria: e.target.value })}
+              fullWidth
+              required
+              placeholder="Ex: Consulta inicial, Acompanhamento"
+              InputLabelProps={{
+                sx: {
+                  fontSize: '1rem',
+                  '&.MuiInputLabel-shrink': {
+                    fontSize: '1rem',
+                  },
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: '1rem',
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '1rem',
+                },
+              }}
+            />
+
+            <Box>
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                sx={{
+                  fontSize: '1rem',
+                  fontWeight: 500,
+                  mb: 1.5,
+                }}
+              >
+                Tags
+              </Typography>
+              {editConsulta.tags.length > 0 && (
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  flexWrap="wrap"
+                  sx={{ mb: 2 }}
+                >
+                  {editConsulta.tags.map((tag) => (
+                    <Chip
+                      key={tag}
+                      label={tag}
+                      onDelete={() => removeEditTag(tag)}
+                      size="medium"
+                      sx={{
+                        fontSize: '0.875rem',
+                        height: '32px',
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+              <Stack direction="row" spacing={1.5}>
+                <TextField
+                  placeholder="Adicionar tag"
+                  value={editConsulta.tagInput}
+                  onChange={(e) => setEditConsulta({ ...editConsulta, tagInput: e.target.value })}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addEditTag();
+                    }
+                  }}
+                  fullWidth
+                  inputProps={{
+                    sx: {
+                      fontSize: '1rem',
+                    },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1rem',
+                    },
+                  }}
+                />
+                <Button
+                  onClick={addEditTag}
+                  variant="outlined"
+                  sx={{
+                    fontSize: '0.875rem',
+                    px: 3,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Adicionar
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            gap: 1.5,
+          }}
+        >
+          <Button
+            onClick={() => setOpenEditModal(false)}
+            disabled={editLoading}
+            sx={{
+              fontSize: '0.9375rem',
+              px: 3,
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleUpdateConsulta}
+            variant="contained"
+            disabled={editLoading}
+            sx={{
+              fontSize: '0.9375rem',
+              px: 3,
+              minWidth: 140,
+            }}
+          >
+            {editLoading ? <CircularProgress size={24} /> : 'Salvar Alterações'}
+          </Button>
         </DialogActions>
       </Dialog>
     </div>
   );
 };
+
+// Agenda.auth = {
+//   isProtected: true,
+// };
 
 export default Agenda;

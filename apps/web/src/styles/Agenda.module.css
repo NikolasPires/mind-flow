@@ -38,7 +38,7 @@ Estilos específicos para a página de Agenda
 }
 
 .scheduleButton {
-  background-color: #20B2AA;
+  background-color: var(--primary-color, #00897b);
   color: white;
   text-transform: none;
   border-radius: 8px;
@@ -46,7 +46,7 @@ Estilos específicos para a página de Agenda
 }
 
 .scheduleButton:hover {
-  background-color: #1A9B94;
+  background-color: #00695c;
 }
 
 .calendarGrid {
@@ -134,6 +134,9 @@ Estilos específicos para a página de Agenda
   border-left: 4px solid;
   cursor: pointer;
   transition: box-shadow 0.2s ease;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .appointmentCard:hover {
@@ -159,6 +162,10 @@ Estilos específicos para a página de Agenda
   font-weight: 500;
   margin-bottom: 2px;
   color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
 }
 
 .appointmentType {
@@ -210,11 +217,26 @@ Estilos específicos para a página de Agenda
   }
   
   .appointmentCard {
-    font-size: 0.75rem;
+    padding: 4px 6px;
+    min-width: 0;
+    overflow: hidden;
   }
   
   .appointmentPatient {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  .appointmentTime {
+    font-size: 0.65rem;
+  }
+  
+  .appointmentType {
+    font-size: 0.6rem;
   }
 }
 
@@ -233,7 +255,7 @@ Estilos específicos para a página de Agenda
   
   .timeSlot {
     height: 50px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
   
   .dayHeader {
@@ -241,10 +263,33 @@ Estilos específicos para a página de Agenda
   }
   
   .dayName {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
   
   .dayDate {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+  }
+  
+  .appointmentCard {
+    padding: 3px 5px;
+  }
+  
+  .appointmentPatient {
+    font-size: 0.6rem;
+    line-height: 1.1;
+  }
+  
+  .appointmentTime {
+    font-size: 0.6rem;
+  }
+  
+  .appointmentType {
+    font-size: 0.55rem;
+  }
+  
+  .statusChip {
+    font-size: 0.55rem;
+    height: 16px;
+    padding: 0 6px;
   }
 }

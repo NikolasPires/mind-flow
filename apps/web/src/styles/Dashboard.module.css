@@ -48,7 +48,7 @@
 }
 
 .btnPrimary {
-  background-color: #4CAF50; 
+  background-color: var(--primary-color, #00897b); 
   color: white;
   padding: 10px 20px;
   border: none;
@@ -60,12 +60,12 @@
 }
 
 .btnPrimary:hover {
-  background-color: #45a049;
+  background-color: #00695c;
   transform: translateY(-2px);
 }
 
 .btnPrimary:active {
-  background-color: #3e8e41;
+  background-color: #005f56;
   transform: translateY(0);
 }
 
@@ -116,4 +116,117 @@
 
 .infoCard h3 {
   margin-top: 0;
+}
+
+.agendaList {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.agendaItem {
+  display: flex; /* Alinha o tempo e os detalhes lado a lado */
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.agendaItem:last-child {
+  border-bottom: none;
+}
+
+.agendaTime {
+  flex-shrink: 0; /* Impede que o horário encolha */
+  width: 80px; /* Largura fixa para o horário */
+  font-size: 1.1rem;
+  color: #007aff; /* Cor azul para destacar o horário */
+  font-weight: 700;
+  text-align: right;
+  padding-right: 20px;
+  border-right: 2px solid #007aff20; /* Linha sutil separadora */
+}
+
+.agendaDetails {
+  flex-grow: 1;
+  padding-left: 20px;
+}
+
+.agendaPatientName {
+  font-weight: 600;
+  font-size: 1rem;
+  display: block; /* Garante que o nome ocupe uma linha */
+  margin-bottom: 5px;
+}
+
+.agendaTags {
+  display: flex;
+  gap: 8px;
+}
+
+/* Estilos de Tag (Etiquetas) */
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.tagPrimary {
+  background-color: #e6f0ff;
+  color: #007aff;
+}
+
+.tagSecondary {
+  background-color: #e0f2f1;
+  color: #00897b;
+}
+
+/* Estilos da Lista de Pacientes Recentes */
+.recentList {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.recentItem:last-child {
+  border-bottom: none;
+}
+
+.recentAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #d1e7dd; /* Cor de fundo suave */
+  color: #00897b; /* Cor do texto */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-right: 15px;
+}
+
+.recentDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.recentName {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.recentEmail {
+  font-size: 0.8rem;
+  color: #999;
 }

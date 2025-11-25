@@ -133,7 +133,7 @@
 
 /* Campo de arquivo customizado */
 .inputFieldFile::-webkit-file-upload-button {
-  background-color: #00796b;
+  background-color: var(--primary-color, #00897b);
   color: white;
   border: none;
   border-radius: 8px;
@@ -144,12 +144,12 @@
 }
 
 .inputFieldFile::-webkit-file-upload-button:hover {
-  background-color: #005f56;
+  background-color: #00695c;
 }
 
 .submitButton {
   width: 100%;
-  background: #00796b;
+  background: var(--primary-color, #00897b);
   color: white;
   border: none;
   border-radius: 10px;
@@ -162,7 +162,7 @@
 }
 
 .submitButton:hover {
-  background: #005f56;
+  background: #00695c;
   transform: translateY(-2px);
 }
 

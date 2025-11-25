@@ -54,7 +54,7 @@
 }
 
 .scheduleButton {
-  background-color: #00897b;
+  background-color: var(--primary-color, #00897b);
   color: #fff;
 }
 
@@ -200,7 +200,7 @@
 
 .viewProntuarioButton:hover,
 .addNotesButton:hover {
-  background-color: #00897b;
+  background-color: var(--primary-color, #00897b);
   color: #fff;
 }
 
@@ -244,14 +244,14 @@
   gap: 8px; /* Um pequeno espaço entre o ícone e o texto */
   
   /* --- Cores e texto, usando o padrão do seu botão principal --- */
-  background-color: #00897b; /* Mesma cor do .scheduleButton */
+  background-color: var(--primary-color, #00897b); /* Mesma cor do .scheduleButton */
   color: #fff;
   font-weight: 600; /* Dando um pouco mais de destaque */
   text-decoration: none; /* Garante que o <Link> não tenha sublinhado */
 }
 
 .startButton:hover {
-  background-color: #2d3748; /* Mesma cor hover do .scheduleButton */
+  background-color: #00695c; /* Hover padronizado */
 }
 
 /* ============================================== */

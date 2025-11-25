@@ -2,17 +2,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import ReactMarkdown from 'react-markdown'; 
 import styles from '@/styles/SessaoAtiva.module.css';
-// Ícones usados
-import { FiPlayCircle, FiPauseCircle, FiCheckSquare, FiMic, FiChevronsLeft, FiSquare, FiEdit2 } from 'react-icons/fi'; // Adicionei FiEdit2 para o título
+import { 
+  FiPlayCircle, 
+  FiPauseCircle, 
+  FiCheckSquare, 
+  FiMic, 
+  FiChevronsLeft, 
+  FiSquare, 
+  FiEdit2,
+  FiFileText,
+} from 'react-icons/fi'; 
+import { IoSparkles } from 'react-icons/io5';
 import { mockPatientsDetails } from '@/lib/mockData';
 
-// Define os possíveis estados da sessão
 type SessionState = 'INACTIVE' | 'ACTIVE' | 'PAUSED' | 'REVIEW';
 
-/**
- * Pequena declaração para evitar erros do TS sobre propriedades não padrão do window
- */
 declare global {
   interface Window {
     SpeechRecognition?: any;
@@ -24,7 +30,9 @@ const formatTime = (totalSeconds: number): string => {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(
+    seconds
+  ).padStart(2, '0')}`;
 };
 
 const LiveSessionPage: React.FC = () => {
@@ -39,23 +47,22 @@ const LiveSessionPage: React.FC = () => {
 
   const [finalTranscript, setFinalTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
-  
+
+  const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState('');
+
   const recognitionRef = useRef<any>(null);
 
-  // Controla o cronômetro
   useEffect(() => {
     let interval: number | null = null;
     if (sessionState === 'ACTIVE') {
       interval = window.setInterval(() => setTimeElapsed((t) => t + 1), 1000);
     }
     return () => {
-      if (interval !== null) {
-        window.clearInterval(interval);
-      }
+      if (interval !== null) window.clearInterval(interval);
     };
   }, [sessionState]);
 
-  // Função para garantir que a gravação pare e o texto seja mesclado
   const stopAndMergeRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
@@ -65,7 +72,6 @@ const LiveSessionPage: React.FC = () => {
     }
   };
 
-  // Funções de controle da sessão
   const handleStartSession = () => setSessionState('ACTIVE');
   const handlePauseSession = () => {
     stopAndMergeRecording();
@@ -73,7 +79,7 @@ const LiveSessionPage: React.FC = () => {
   };
   const handleResumeSession = () => setSessionState('ACTIVE');
   const handleGoToReview = () => {
-    stopAndMergeRecording(); 
+    stopAndMergeRecording();
     setSessionState('REVIEW');
   };
 
@@ -85,14 +91,13 @@ const LiveSessionPage: React.FC = () => {
       return;
     }
 
-    // Lógica de iniciar e parar gravação (simplificada para o frontend)
     if (!isRecording) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert('Reconhecimento de voz não é suportado neste navegador (use Chrome/Edge).');
+        alert('Reconhecimento de voz não é suportado neste navegador.');
         return;
       }
-      
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
       recognition.continuous = true;
@@ -101,212 +106,254 @@ const LiveSessionPage: React.FC = () => {
       recognition.onresult = (event: any) => {
         let interim = '';
         let finalText = '';
-
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
-          const chunk = (result[0] && result[0].transcript) ? result[0].transcript : '';
-          if (result.isFinal) {
-            finalText += chunk.trim() + ' ';
-          } else {
-            interim += chunk;
-          }
+          const chunk = result[0]?.transcript || '';
+          if (result.isFinal) finalText += chunk.trim() + ' ';
+          else interim += chunk;
         }
-
-        if (finalText) {
-          setFinalTranscript((prev) => (prev + ' ' + finalText).trim());
-        }
+        if (finalText) setFinalTranscript((prev) => (prev + ' ' + finalText).trim());
         setInterimTranscript(interim);
       };
 
-      recognition.onerror = (e: any) => {
-        console.error('Speech recognition error:', e);
-      };
+      recognition.onerror = console.error;
 
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-      
+      recognition.onend = () => setIsRecording(false);
+
       recognition.start();
       recognitionRef.current = recognition;
       setIsRecording(true);
       return;
     }
 
-    // Parar
     stopAndMergeRecording();
   };
 
-  // Funções de finalização
+  const handleGenerateSuggestion = async () => {
+    if (notes.trim().length === 0 && finalTranscript.trim().length === 0) {
+      alert('Por favor, escreva anotações ou tenha transcrição para gerar sugestões.');
+      return;
+    }
+
+    setIsLoadingSuggestion(true);
+    setAiSuggestion(''); // Limpa sugestão anterior, mas NÃO limpa as notas
+
+    try {
+      // Simulação de requisição API
+      const response = await fetch('/api/generate-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: finalTranscript,
+          notes,
+        }),
+      });
+
+      const data = await response.json();
+      setAiSuggestion(data.suggestion || 'Nenhuma sugestão retornada.');
+    } catch (err) {
+      console.error(err);
+      // Fallback visual se não houver API real rodando
+      setAiSuggestion('Erro ao conectar com a IA. Verifique se a API está rodando.');
+    } finally {
+      setIsLoadingSuggestion(false);
+    }
+  };
+
   const handleFinalizeAndSave = () => {
     if (notes.trim().length === 0) {
-        alert('Por favor, adicione suas anotações ou avaliação final antes de salvar.');
-        return;
+      alert('Adicione anotações antes de finalizar.');
+      return;
     }
 
     const payload = {
       patientId,
       notes,
       transcript: finalTranscript,
+      aiSuggestion,
       durationSeconds: timeElapsed,
       date: new Date().toISOString(),
     };
-    console.log('Enviando payload (final):', payload);
 
-    alert('Sessão finalizada e dados salvos com sucesso!');
+    console.log('Dados salvos:', payload);
+    alert('Sessão finalizada!');
     router.push(`/pacientes/${patientId}`);
   };
 
-
   const patient = mockPatientsDetails.find((p) => p.id === patientId);
+
   if (!router.isReady || !patient) {
-    return <div className={styles.centeredMessage}>Carregando informações da sessão...</div>;
+    return <div className={styles.centeredMessage}>Carregando...</div>;
   }
 
-  // Variáveis para controlar desabilitação e conteúdo
-  const isSessionActive = sessionState === 'ACTIVE';
-  const isSessionInactive = sessionState === 'INACTIVE';
-  const isNotesAndTranscriptEditable = !isSessionInactive; 
-  const displayableTranscript = (finalTranscript + ' ' + (isRecording ? interimTranscript : '')).trim();
+  const displayableTranscript = (
+    finalTranscript +
+    ' ' +
+    (isRecording ? interimTranscript : '')
+  ).trim();
 
-  // Define o status de exibição
-  const statusDisplay = {
-      'INACTIVE': 'Pronta para Iniciar',
-      'ACTIVE': 'Em Andamento',
-      'PAUSED': 'Pausada (Retomar/Revisar)',
-      'REVIEW': 'Revisão Final'
-  }[sessionState];
-  
-  // Classe de controle para a barra
-  const controlsBarClass = isSessionInactive ? styles.inactive : styles.active;
+  const isSessionInactive = sessionState === 'INACTIVE';
+  const isSessionActive = sessionState === 'ACTIVE';
+  const isNotesEditable = sessionState !== 'INACTIVE';
 
   return (
     <>
       <Head>
         <title>Sessão Ativa - {patient.name}</title>
       </Head>
+
       <div className={styles.sessionPage}>
         <aside className={styles.sidebar}>
-          <button onClick={() => router.back()} className={styles.backButton}>
+          <button 
+            type="button" 
+            onClick={() => router.back()} 
+            className={styles.backButton}
+          >
             <FiChevronsLeft /> Voltar
           </button>
-          <img src={patient.avatar} alt={patient.name} className={styles.patientAvatar} />
+
+          <img src={patient.avatar} alt={`Avatar de ${patient.name}`} className={styles.patientAvatar} />
+
           <h2>{patient.name}</h2>
+
           <div className={styles.sessionInfo}>
-            <p><strong>Data da Sessão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
-            <p>
-                <strong>Duração:</strong> 
-                <span className={sessionState === 'ACTIVE' ? styles.activeDuration : ''}>
-                    {formatTime(timeElapsed)}
-                </span>
-            </p>
-            <p><strong>Status:</strong> <span className={styles.statusText}>{statusDisplay}</span></p>
+            <p><strong>Data:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+            <p><strong>Duração:</strong> {formatTime(timeElapsed)}</p>
+            <p><strong>Status:</strong> <span className={styles.statusText}>{sessionState}</span></p>
           </div>
         </aside>
 
         <main className={styles.mainContent}>
-          <div className={`${styles.controlsBar} ${controlsBarClass}`}>
-            
-            {/* O Timer só aparece se a sessão NÃO estiver INACTIVE */}
+          
+          {/* ===================== CONTROLS ===================== */}
+          <div className={styles.controlsBar}>
+
             {!isSessionInactive && (
-                <div className={styles.timerDisplay}>{formatTime(timeElapsed)}</div>
+              <div className={styles.timerDisplay}>{formatTime(timeElapsed)}</div>
             )}
 
-            {/* Controles de Gravação e Consentimento - Apenas no estado ACTIVE */}
             {isSessionActive && (
               <div className={styles.recordingControls}>
                 <div className={styles.consent}>
                   <input
                     type="checkbox"
-                    id="consent"
                     checked={consentGiven}
                     onChange={(e) => setConsentGiven(e.target.checked)}
-                    disabled={isRecording}
                   />
-                  <label htmlFor="consent">Gravação consentida</label>
+                  <label>Gravação consentida</label>
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleToggleRecording}
                   disabled={!consentGiven}
                   className={`${styles.recordButton} ${isRecording ? styles.recordingActive : ''}`}
                 >
-                  <FiMic /> {isRecording ? 'Parar Gravação' : 'Gravar Áudio'}
+                  <FiMic /> {isRecording ? 'Parar' : 'Gravar'}
                 </button>
               </div>
             )}
 
-            {/* Botões de Ação da Sessão (Lógica de estados) */}
             <div className={styles.actionButtons}>
-              {/* ESTADO INACTIVE */}
               {isSessionInactive && (
-                <button onClick={handleStartSession} className={styles.sessionButtonStart}>
-                  <FiPlayCircle /> Iniciar Sessão
+                <button type="button" onClick={handleStartSession} className={styles.sessionButtonStart}>
+                  <FiPlayCircle /> Iniciar
                 </button>
               )}
 
-              {/* ESTADO ACTIVE */}
               {isSessionActive && (
                 <>
-                  <button onClick={handlePauseSession} className={styles.sessionButtonPause}>
+                  <button type="button" onClick={handlePauseSession} className={styles.sessionButtonPause}>
                     <FiPauseCircle /> Pausar
                   </button>
-                  <button onClick={handleGoToReview} className={styles.sessionButtonEnd}>
-                    <FiSquare /> Encerrar e Revisar
+                  <button type="button" onClick={handleGoToReview} className={styles.sessionButtonEnd}>
+                    <FiSquare /> Encerrar
                   </button>
                 </>
               )}
 
-              {/* ESTADO PAUSED */}
               {sessionState === 'PAUSED' && (
                 <>
-                  <button onClick={handleResumeSession} className={styles.sessionButtonStart}>
+                  <button type="button" onClick={handleResumeSession} className={styles.sessionButtonStart}>
                     <FiPlayCircle /> Retomar
                   </button>
-                  <button onClick={handleGoToReview} className={styles.sessionButtonFinalize}>
-                    <FiCheckSquare /> Ir para Revisão
+                  <button type="button" onClick={handleGoToReview} className={styles.sessionButtonFinalize}>
+                    <FiCheckSquare /> Revisar
                   </button>
                 </>
               )}
 
-              {/* ESTADO REVIEW */}
               {sessionState === 'REVIEW' && (
-                <button 
-                    onClick={handleFinalizeAndSave} 
-                    className={styles.sessionButtonFinalize}
-                    disabled={notes.trim().length === 0} 
+                <button
+                  type="button"
+                  onClick={handleFinalizeAndSave}
+                  className={styles.sessionButtonFinalize}
                 >
-                  <FiCheckSquare /> Finalizar e Salvar
+                  <FiCheckSquare /> Salvar e Sair
                 </button>
               )}
             </div>
           </div>
-          
-          {/* Título da Área de Anotações */}
-          <h3 className={styles.notesTitle}>
-             <FiEdit2 style={{marginRight: '5px', verticalAlign: 'middle'}} /> Anotações Clínicas e Evolução
+
+          {/* ===================== ANOTAÇÕES ===================== */}
+          <h3 className={styles.sectionTitle}>
+            <FiEdit2 /> Anotações Clínicas
           </h3>
 
-          {/* Área de Anotações */}
           <div className={styles.notesArea}>
             <textarea
-              placeholder="Digite suas anotações e avaliação clínica aqui..."
+              placeholder="Digite suas anotações aqui..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              disabled={!isNotesAndTranscriptEditable}
+              disabled={!isNotesEditable}
             />
           </div>
 
-          {/* CAIXA DA TRANSCRIÇÃO */}
-          <div className={styles.transcriptionBox}>
-            <h3>{isRecording ? 'Transcrição em tempo real:' : 'Transcrição Completa (Editável):'}</h3>
-            <textarea
-              className={styles.transcriptionEditable}
-              value={displayableTranscript}
-              onChange={(e) => setFinalTranscript(e.target.value)}
-              disabled={!isNotesAndTranscriptEditable}
-            />
+          {/* ===================== TRANSCRIÇÃO ===================== */}
+          <h3 className={styles.sectionTitle}>
+            <FiFileText /> Transcrição
+          </h3>
+
+          <textarea
+            className={styles.transcriptionEditable}
+            value={displayableTranscript}
+            onChange={(e) => setFinalTranscript(e.target.value)}
+            disabled={!isNotesEditable || isRecording}
+            placeholder="O texto transcrito aparecerá aqui..."
+          />
+
+          {/* ===================== IA (CARD INFORMATIVO) ===================== */}
+          <h3 className={styles.sectionTitle}>
+            <IoSparkles /> Sugestão da Malu
+          </h3>
+
+          <div className={styles.aiArea}>
+            <button
+              type="button"
+              className={styles.aiButton}
+              onClick={handleGenerateSuggestion}
+              disabled={!isNotesEditable || isLoadingSuggestion}
+            >
+              <IoSparkles />
+              {isLoadingSuggestion ? 'A Malu está analisando...' : 'Pedir ajuda à Malu'}
+            </button>
+
+            {/* CARD DA IA ATUALIZADO */}
+            <div className={styles.aiSuggestionCard}>
+              {isLoadingSuggestion ? (
+                <span className={styles.loadingText}>
+                  <IoSparkles /> A Malu está analisando a sessão...
+                </span>
+              ) : aiSuggestion ? (
+                // O ReactMarkdown converte os asteriscos em HTML real
+                <ReactMarkdown>{aiSuggestion}</ReactMarkdown>
+              ) : (
+                <span className={styles.aiPlaceholder}>
+                  Os insights gerados pela Malu aparecerão aqui após clicar no botão.
+                </span>
+              )}
+            </div>
           </div>
-          
         </main>
       </div>
     </>

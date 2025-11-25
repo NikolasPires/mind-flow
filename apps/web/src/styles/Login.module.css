@@ -146,7 +146,7 @@
 
 .submitButton {
     width: 100%;
-    background-color: #008080; 
+    background-color: var(--primary-color, #00897b); 
     color: white;
     font-weight: 700;
     padding: 1rem;
@@ -155,13 +155,13 @@
     cursor: pointer;
     font-size: 1rem;
     transition: background-color 0.2s, transform 0.1s;
-    box-shadow: 0 4px 10px rgba(0, 128, 128, 0.2); 
+    box-shadow: 0 4px 10px rgba(0, 137, 123, 0.2); 
 }
 
 .submitButton:hover {
-    background-color: #006666; 
+    background-color: #00695c; 
     transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(0, 128, 128, 0.3);
+    box-shadow: 0 6px 15px rgba(0, 137, 123, 0.3);
 }
 
 /* Remove o divider (OU CONTINUE COM) */

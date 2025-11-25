@@ -33,11 +33,25 @@ enum AccountStatus {
   SUSPENDED
 }
 
+enum ConsultaStatus {
+  CONFIRMADO
+  CANCELADO
+  A_CONFIRMAR
+}
+
+enum TranscricaoStatus {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDA
+  ERRO
+}
+
 
 model User {
   id             String        @id @default(cuid())
   name           String
   email          String        @unique
+  emailHash      String?       @unique
   password       String
   photo_url      String?
   phone          String?
@@ -53,8 +67,8 @@ model User {
 model Psicologo {
   userId String @id
   user   User   @relation(fields: [userId], references: [id])
-
-  crp               String @unique
+  crp               String  @unique
+  crpHash           String? @unique
   bio               String?
   schedule_settings Json? 
 
@@ -64,8 +78,8 @@ model Psicologo {
 model Paciente {
   userId String @id
   user   User   @relation(fields: [userId], references: [id])
-
-  cpf                  String      @unique
+  cpf                  String?     @unique
+  cpfHash              String?     @unique
   gender               Gender
   initial_observations String?
   history              String?
@@ -73,4 +87,30 @@ model Paciente {
 
   psicologo_responsavel_id String? 
   psicologo_responsavel    Psicologo?  @relation("PsicologoResponsavel", fields: [psicologo_responsavel_id], references: [userId])
+  
+  consultas Consulta[]
+}
+
+model Consulta {
+  id            String        @id @default(cuid())
+  paciente_id   String
+  paciente      Paciente      @relation(fields: [paciente_id], references: [userId])
+  horario       DateTime
+  tipo          String
+  categoria     String
+  tags          String[]
+  status        ConsultaStatus @default(A_CONFIRMAR)
+  sugestao_IA   String?
+  transcricao_id String?
+  created_at    DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Transcricao {
+  id            String           @id @default(cuid())
+  texto_gerado  String?
+  data_geracao  DateTime         @default(now())
+  status        TranscricaoStatus @default(PENDENTE)
+  created_at    DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }

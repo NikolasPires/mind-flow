@@ -2,87 +2,75 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import styles from '@/styles/Configuracoes.module.css';
 import { FiSave, FiUser, FiMail, FiPhone, FiCalendar, FiLock, FiInfo, FiUpload, FiCamera, FiCheckCircle } from 'react-icons/fi';
+import { userService, UserProfile } from '../services/userService';
 
 // --- Tipos de Dados (Expandidos para ambos os perfis) ---
 
 type UserType = 'PATIENT' | 'PSYCHOLOGIST';
 
-interface UserData {
+interface ProfileData {
     id: string;
     nome: string;
-    data_de_nascimento: string; 
+    data_de_nascimento?: string; 
     email: string;
-    idade: number;
-    telefone: string;
-    foto: string; 
-    endereco: string;
-    login: string;
+    telefone: string | null;
+    foto: string | null; 
+    endereco?: string;
+    login?: string;
     tipo_usuario: UserType;
-    senha_hash: string; 
+    // Paciente fields
+    cpf?: string | null;
+    historico?: string | null;
+    status?: string;
+    genero?: string;
+    observacoes_iniciais?: string | null;
+    psicologo_responsavel_id?: string | null;
+    // Psicologo fields
+    crp?: string;
+    bio?: string | null;
+    configuracoes_agenda?: string;
 }
 
-interface PatientFields {
-    cpf: string;
-    historico: string;
-    status: string;
-    genero: string;
-    observacoes_iniciais: string;
-    psicologo_responsavel_id: string;
-}
+// Função para converter UserProfile da API para ProfileData do componente
+const convertApiProfileToProfileData = (apiProfile: UserProfile): ProfileData => {
+    const isPatient = apiProfile.role === 'PACIENTE';
+    
+    const baseProfile: ProfileData = {
+        id: apiProfile.id,
+        nome: apiProfile.name,
+        email: apiProfile.email,
+        telefone: apiProfile.phone,
+        foto: apiProfile.photo_url,
+        tipo_usuario: isPatient ? 'PATIENT' : 'PSYCHOLOGIST',
+    };
 
-interface PsychologistFields {
-    crp: string;
-    bio: string;
-    configuracoes_agenda: string;
-}
+    if (isPatient && apiProfile.paciente) {
+        return {
+            ...baseProfile,
+            cpf: apiProfile.paciente.cpf,
+            historico: apiProfile.paciente.history,
+            status: apiProfile.paciente.status,
+            genero: apiProfile.paciente.gender,
+            observacoes_iniciais: apiProfile.paciente.initial_observations,
+        };
+    }
 
-type ProfileData = UserData & Partial<PatientFields> & Partial<PsychologistFields>;
+    if (!isPatient && apiProfile.psicologo) {
+        return {
+            ...baseProfile,
+            crp: apiProfile.psicologo.crp,
+            bio: apiProfile.psicologo.bio,
+            configuracoes_agenda: apiProfile.psicologo.schedule_settings 
+                ? JSON.stringify(apiProfile.psicologo.schedule_settings)
+                : undefined,
+        };
+    }
 
-// --- Dados Mock (Para simular os dois logins) ---
-
-const mockPatientProfile: ProfileData = {
-    id: 'user-123',
-    nome: 'Ana Silva',
-    data_de_nascimento: '1995-08-15',
-    email: 'ana.silva@exemplo.com',
-    idade: 29,
-    telefone: '(11) 98765-4321',
-    foto: '/default-patient.png', 
-    endereco: 'Rua das Flores, 100 - São Paulo',
-    login: 'ana.silva',
-    tipo_usuario: 'PATIENT',
-    senha_hash: 'asdf123',
-    cpf: '123.456.789-00',
-    historico: 'ID-HIST-001',
-    status: 'Ativo',
-    genero: 'Feminino',
-    observacoes_iniciais: 'Ansiedade leve e histórico familiar.',
-    psicologo_responsavel_id: 'psy-456',
-};
-
-const mockPsychologistProfile: ProfileData = {
-    id: 'user-456',
-    nome: 'Dr. João Mendes',
-    data_de_nascimento: '1980-05-20',
-    email: 'joao.mendes@exemplo.com',
-    idade: 44,
-    telefone: '(11) 91234-5678',
-    foto: '/default-psychologist.png', 
-    endereco: 'Av. Paulista, 2000 - São Paulo',
-    login: 'dr.joao',
-    tipo_usuario: 'PSYCHOLOGIST',
-    senha_hash: 'qwer456',
-    crp: '06/123456',
-    bio: 'Especialista em Terapia Cognitivo-Comportamental (TCC) com 20 anos de experiência.',
-    configuracoes_agenda: 'Seg/Qua/Sex: 9h-18h',
-};
-
-// Mapeamento para fácil acesso
-const mockProfiles = {
-    'user-123': mockPatientProfile,
-    'user-456': mockPsychologistProfile,
+    return baseProfile;
 };
 
 
@@ -228,26 +216,41 @@ const PasswordModal: React.FC<PasswordModalProps> = ({ isOpen, onClose }) => {
 // --- Componente Principal: SettingsPage (DINÂMICO) ---
 
 const SettingsPage: React.FC = () => {
-    // VARIÁVEL DE CONTROLE: Alterne entre 'user-123' (Paciente) e 'user-456' (Psicólogo)
-    const loggedInUserId = 'user-456'; 
-    
-    // O sistema de autenticação real forneceria este perfil
-    const initialData = mockProfiles[loggedInUserId as keyof typeof mockProfiles];
-
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Simulação de carregamento de dados
-        setTimeout(() => {
-            setProfile(initialData);
-            setIsLoading(false);
-        }, 500);
-    }, [loggedInUserId]); // Recarrega se o ID de login mudar
+        if (status === 'loading') return;
+
+        if (!session || !session.accessToken) {
+            router.push('/login');
+            return;
+        }
+
+        const loadProfile = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const apiProfile = await userService.getProfile(session.accessToken as string);
+                const convertedProfile = convertApiProfileToProfileData(apiProfile);
+                setProfile(convertedProfile);
+            } catch (err: any) {
+                console.error('Erro ao carregar perfil:', err);
+                setError(err.message || 'Erro ao carregar perfil do usuário');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadProfile();
+    }, [session, status, router]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -274,23 +277,64 @@ const SettingsPage: React.FC = () => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!profile) return;
+        if (!profile || !session?.accessToken) return;
 
         setIsSaving(true);
-        
-        // Filtra dados internos que não devem ser salvos pelo usuário (hash, IDs de referência, etc.)
-        const { senha_hash, historico, status, observacoes_iniciais, psicologo_responsavel_id, ...payloadToSave } = profile; 
-        
-        console.log(`Dados do ${profile.tipo_usuario} a serem salvos:`, payloadToSave);
+        setError(null);
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        alert('Configurações salvas com sucesso!');
-        setIsSaving(false);
+        try {
+            const isPatient = profile.tipo_usuario === 'PATIENT';
+            
+            // Preparar payload para atualização
+            const updateData: any = {
+                name: profile.nome,
+                email: profile.email,
+                phone: profile.telefone || undefined,
+                photo_url: profile.foto || undefined,
+            };
+
+            // Campos específicos do psicólogo
+            if (!isPatient) {
+                if (profile.bio !== undefined) {
+                    updateData.bio = profile.bio;
+                }
+                if (profile.configuracoes_agenda) {
+                    try {
+                        updateData.schedule_settings = JSON.parse(profile.configuracoes_agenda);
+                    } catch {
+                        updateData.schedule_settings = profile.configuracoes_agenda;
+                    }
+                }
+            }
+
+            const result = await userService.updateProfile(updateData, session.accessToken);
+            
+            // Atualizar perfil local com resposta da API
+            if (result.user) {
+                const apiProfile: UserProfile = {
+                    ...result.user,
+                    role: profile.tipo_usuario === 'PATIENT' ? 'PACIENTE' : 'PSICOLOGO',
+                } as UserProfile;
+                const updatedProfile = convertApiProfileToProfileData(apiProfile);
+                setProfile(updatedProfile);
+            }
+
+            alert('Configurações salvas com sucesso!');
+        } catch (err: any) {
+            console.error('Erro ao salvar:', err);
+            setError(err.message || 'Erro ao salvar configurações');
+            alert(err.message || 'Erro ao salvar configurações');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    if (isLoading) {
+    if (status === 'loading' || isLoading) {
         return <div className={styles.centeredMessage}>Carregando perfil...</div>;
+    }
+
+    if (error) {
+        return <div className={styles.centeredMessage}>Erro: {error}</div>;
     }
 
     if (!profile) {
@@ -298,7 +342,7 @@ const SettingsPage: React.FC = () => {
     }
     
     const isPatient = profile.tipo_usuario === 'PATIENT';
-    const birthDateInput = profile.data_de_nascimento.substring(0, 10);
+    const birthDateInput = profile.data_de_nascimento ? profile.data_de_nascimento.substring(0, 10) : '';
     const pageTitle = isPatient ? 'Configurações do Paciente' : 'Configurações do Psicólogo';
 
     return (
@@ -319,9 +363,13 @@ const SettingsPage: React.FC = () => {
                     </h2>
                     <div className={styles.photoUploadContainer}>
                         <img 
-                            src={profile.foto || '/default-avatar.png'} 
+                            src={
+                                profile.foto && !profile.foto.startsWith('data:') 
+                                    ? profile.foto.replace('/upload/', '/upload/w_200,h_200,c_fill,g_face,f_auto,q_auto/') 
+                                    : (profile.foto || '/default-avatar.png')
+                            } 
                             alt="Foto de Perfil" 
-                            className={styles.profilePhoto} 
+                            className={styles.profilePhoto}
                         />
                         <input 
                             type="file" 
@@ -344,19 +392,25 @@ const SettingsPage: React.FC = () => {
                         <FiUser /> Dados Pessoais
                     </h2>
                     <div className={styles.grid}>
-                        <FormField label="Nome Completo" name="nome" icon={FiUser} value={profile.nome} onChange={handleChange} />
-                        <FormField label="E-mail" name="email" icon={FiMail} value={profile.email} onChange={handleChange} type="email" />
-                        <FormField label="Telefone" name="telefone" icon={FiPhone} value={profile.telefone} onChange={handleChange} />
-                        <FormField label="Data de Nascimento" name="data_de_nascimento" icon={FiCalendar} value={birthDateInput} onChange={handleChange} type="date" />
+                        <FormField label="Nome Completo" name="nome" icon={FiUser} value={profile.nome || ''} onChange={handleChange} />
+                        <FormField label="E-mail" name="email" icon={FiMail} value={profile.email || ''} onChange={handleChange} type="email" />
+                        <FormField label="Telefone" name="telefone" icon={FiPhone} value={profile.telefone || ''} onChange={handleChange} />
+                        {birthDateInput && (
+                            <FormField label="Data de Nascimento" name="data_de_nascimento" icon={FiCalendar} value={birthDateInput} onChange={handleChange} type="date" />
+                        )}
                     </div>
-                    <FormField label="Endereço Completo" name="endereco" icon={FiInfo} value={profile.endereco} onChange={handleChange} />
+                    {profile.endereco && (
+                        <FormField label="Endereço Completo" name="endereco" icon={FiInfo} value={profile.endereco} onChange={handleChange} />
+                    )}
                     
                     {/* Seção de Acesso e Senha - COMUM A AMBOS */}
                     <h2 className={styles.sectionTitle}>
                         <FiLock /> Acesso e Segurança
                     </h2>
                     <div className={styles.grid}>
-                        <FormField label="Login de Acesso" name="login" icon={FiUser} value={profile.login} onChange={handleChange} disabled={true} />
+                        {profile.login && (
+                            <FormField label="Login de Acesso" name="login" icon={FiUser} value={profile.login} onChange={handleChange} disabled={true} />
+                        )}
                         <button type="button" className={styles.changePasswordButton} onClick={() => setIsModalOpen(true)}>
                             <FiLock /> Alterar Senha
                         </button>
@@ -378,8 +432,8 @@ const SettingsPage: React.FC = () => {
                         {/* Lógica do Psicólogo */}
                         {!isPatient && (
                             <>
-                                <FormField label="CRP" name="crp" icon={FiInfo} value={profile.crp} onChange={handleChange} />
-                                <FormField label="Configurações de Agenda" name="configuracoes_agenda" icon={FiCalendar} value={profile.configuracoes_agenda} onChange={handleChange} placeholder="Ex: Seg/Qua/Sex: 9h-18h" />
+                                <FormField label="CRP" name="crp" icon={FiInfo} value={profile.crp || ''} onChange={handleChange} disabled={true} />
+                                <FormField label="Configurações de Agenda" name="configuracoes_agenda" icon={FiCalendar} value={profile.configuracoes_agenda || ''} onChange={handleChange} placeholder="Ex: Seg/Qua/Sex: 9h-18h" />
                             </>
                         )}
                     </div>
@@ -401,7 +455,7 @@ const SettingsPage: React.FC = () => {
                             label="Biografia Profissional (Bio)" 
                             name="bio" 
                             icon={FiInfo} 
-                            value={profile.bio} 
+                            value={profile.bio || ''} 
                             onChange={handleChange} 
                             isTextArea={true}
                             placeholder="Descreva sua especialidade e abordagem (Ex: TCC, Psicanálise)..."

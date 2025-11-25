@@ -8,10 +8,11 @@ export class UserRepositoryInMemory implements UserRepository {
         this.users.push(user);
     }
 
-    async findByEmail(email: string): Promise<User | null> {
-        const user = this.users.find((user) => user.email === email);
-        if(!user) return null
-
-        return user
-    }
+   async findByEmailHash(emailHash: string): Promise<User | null> {
+        const user = this.users.find(u => u.emailHash === emailHash);
+        if (!user) {
+            return null;
+        }
+        return user;
+   }
 }

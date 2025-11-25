@@ -1,4 +1,6 @@
-/* Estrutura Principal */
+
+/* ==================== Estrutura Principal ==================== */
+
 .sessionPage {
     display: flex;
     height: 100vh;
@@ -6,429 +8,398 @@
     color: var(--text-dark);
     font-family: 'Inter', sans-serif;
     overflow: hidden;
+}/* ==================== Painel Lateral (Fundo Claro) ==================== */
+.sidebar {
+  width: 300px;
+  max-width: 30%;
+  /* Fundo agora é branco/claro */
+  background-color: var(--bg-medium, #ffffff); 
+  border-right: 1px solid var(--border-light, #e5e7eb);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  overflow-y: auto;
 }
 
-/* Painel Lateral de Referência */
-.sidebar {
-    width: 320px;
-    background-color: var(--bg-dark); 
-    border-right: 1px solid var(--border-light);
-    padding: 2rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-    flex-shrink: 0; 
-    overflow-y: auto; 
-}
 .backButton {
-    align-self: flex-start;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-medium);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: color 0.2s ease;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* Cor escura para o botão de voltar */
+  color: var(--text-medium, #6b7280); 
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 .backButton:hover {
-    color: var(--secondary-color);
+  color: var(--secondary-color, #f59e0b);
 }
+
 .patientAvatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 1.5rem;
-    border: 4px solid var(--primary-color);
-    box-shadow: var(--shadow-md);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1.5rem;
+  border: 4px solid var(--primary-color, #0d9488);
+  box-shadow: var(--shadow-md);
 }
+
 .sidebar h2 {
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-dark);
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  /* A cor que antes era do fundo (azul escuro/cinza) agora está no título */
+  color: var(--text-dark, #111827); 
 }
+
 .sidebar h2 + p {
-    font-size: 1rem;
-    color: var(--text-medium);
-    margin-bottom: 2rem;
+  font-size: 1rem;
+  color: var(--text-medium, #6b7280);
+  margin-bottom: 1.5rem;
 }
+
 .sessionInfo {
-    width: 100%;
-    text-align: left;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-light);
+  width: 100%;
+  text-align: left;
+  padding-top: 1rem;
+  /* Borda sutil para separar do topo */
+  border-top: 1px solid var(--border-light, #e5e7eb); 
 }
+
 .sessionInfo p {
-    font-size: 0.95rem;
-    line-height: 1.8;
-    color: var(--text-medium);
-    margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-medium, #6b7280);
+  margin-bottom: 0.5rem;
 }
+
 .sessionInfo strong {
-    color: var(--text-dark);
+  /* Destaques em azul escuro/preto para contraste no fundo branco */
+  color: var(--text-dark, #111827); 
 }
+
 .statusText {
-    font-weight: 600;
-    color: var(--secondary-color); 
+  font-weight: 600;
+  color: var(--secondary-color, #f59e0b);
 }
 
-/* Conteúdo Principal à Direita */
+/* ==================== Conteúdo Principal ==================== */
 .mainContent {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 2rem;
-    overflow-y: auto; 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  overflow-y: auto;
+  min-width: 0;
 }
 
-/* Barra de Controle Superior */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-dark, #333);
+  margin-top: 1.5rem;
+}
+
+/* ==================== Barra de Controle ==================== */
 .controlsBar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    background-color: var(--bg-medium);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 2rem;
-    gap: 1rem;
-    flex-wrap: wrap; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: var(--bg-medium, #fff);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
+
 .timerDisplay {
-    font-size: 2.5rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--text-dark);
-    min-width: 150px;
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dark, #333);
+  min-width: 120px;
 }
+
 .recordingControls {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    flex-grow: 1; 
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-grow: 1;
+  justify-content: center;
 }
+
 .consent {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.95rem;
-    color: var(--text-medium);
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-medium, #666);
+  white-space: nowrap;
 }
 .consent input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary-color);
-}
-/* Agrupador para os botões Iniciar/Pausar/Finalizar */
-.actionButtons {
-    display: flex;
-    gap: 1rem;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color, #0d9488);
 }
 
-/* Estilos Comuns para Botões de Ação */
+/* ==================== Botões ==================== */
+.actionButtons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .recordButton, 
 .sessionButtonStart, 
 .sessionButtonEnd,
 .sessionButtonFinalize,
 .sessionButtonPause {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.8rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-sm);
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
-/* Estilo do Botão de Gravação */
 .recordButton {
-    background-color: var(--bg-medium);
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
+  background-color: var(--bg-medium, #fff);
+  color: var(--accent-color, #ef4444);
+  border: 1px solid var(--accent-color, #ef4444);
 }
 .recordButton:hover:not(:disabled) {
-    background-color: var(--accent-color);
-    color: var(--light-text);
-    box-shadow: var(--shadow-md);
+  background-color: var(--accent-color, #ef4444);
+  color: #fff;
+  box-shadow: var(--shadow-md);
 }
 .recordButton.recordingActive {
-    background-color: var(--danger-color);
-    color: var(--light-text);
-    border-color: var(--danger-color);
-    animation: pulse-red 1s infinite alternate;
+  background-color: var(--danger-color, #ef4444);
+  color: #fff;
+  border-color: var(--danger-color, #ef4444);
+  animation: pulse-red 1s infinite alternate;
 }
 @keyframes pulse-red {
-    from { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4); }
-    to { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  from { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.4); }
+  to { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
 
-/* Botão: Iniciar/Retomar Sessão */
-.sessionButtonStart {
-    /* FORÇANDO COR DE FUNDO AZUL ESCURO (Substitui var(--primary-color)) */
-    background-color: #2E476C; 
-    /* FORÇANDO TEXTO BRANCO, mas usando fallback para escuro se o fundo falhar */
-    color: var(--light-text, #2E476C); 
+.sessionButtonStart, .sessionButtonPause, .sessionButtonFinalize {
+  background-color: var(--primary-color, #0d9488);
+  color: #fff;
 }
-.sessionButtonStart:hover:not(:disabled) {
-    background-color: var(--secondary-color, #3C5A88); /* Fallback para uma cor escura similar */
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-/* Botão: Pausar Sessão */
-.sessionButtonPause {
-    background-color: var(--accent-color); 
-    color: var(--light-text); 
-}
-.sessionButtonPause:hover:not(:disabled) {
-    background-color: var(--accent-color);
-    filter: brightness(1.1);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+.sessionButtonStart:hover:not(:disabled), 
+.sessionButtonPause:hover:not(:disabled), 
+.sessionButtonFinalize:hover:not(:disabled) {
+  background-color: #0f766e;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
-/* Botão: Encerrar e Revisar */
 .sessionButtonEnd {
-    background-color: var(--danger-color);
-    color: var(--light-text); 
+  background-color: var(--danger-color, #ef4444);
+  color: #fff;
 }
 .sessionButtonEnd:hover:not(:disabled) {
-    background-color: var(--danger-color-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+  background-color: #dc2626;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
-/* Botão: Finalizar e Salvar / Ir para Revisão */
-.sessionButtonFinalize {
-    /* FORÇANDO COR DE FUNDO VERDE ESCURO (Substitui var(--success-color)) */
-    background-color: #006666; 
-    /* FORÇANDO TEXTO BRANCO, mas usando fallback para escuro se o fundo falhar */
-    color: var(--light-text, #006666); 
-}
-.sessionButtonFinalize:hover:not(:disabled) {
-    background-color: var(--success-color-hover, #006666); /* Fallback para uma cor escura similar */
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-/* Correção para garantir que os ícones do React usem a cor do texto do botão */
-.sessionButtonStart svg, 
-.sessionButtonEnd svg,
-.sessionButtonFinalize svg,
-.sessionButtonPause svg,
-.recordButton svg {
-    color: inherit; 
-}
-
-
-/* Desabilitados */
 .recordButton:disabled,
 .sessionButtonStart:disabled,
 .sessionButtonEnd:disabled,
 .sessionButtonFinalize:disabled,
 .sessionButtonPause:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
-/* Área de Anotações */
+/* ==================== Área de Anotações (CORRIGIDO) ==================== */
 .notesArea {
-    height: 350px; 
-    background-color: var(--bg-medium);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-    display: flex;
-    margin-bottom: 2rem; 
+  width: 100%;
+  height: 300px;
+  /* Fallback de cor: Branco se a variável falhar */
+  background-color: var(--bg-medium, #ffffff); 
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  /* Borda explícita para garantir visibilidade */
+  border: 1px solid var(--border-light, #e5e7eb); 
+  margin-bottom: 1.5rem;
+  display: block; /* Garante que o container ocupe espaço */
+  position: relative;
 }
+
 .notesArea textarea {
-    width: 100%;
-    height: 100%;
-    border: none;
-    padding: 1.5rem;
-    font-family: 'Georgia', serif;
-    font-size: 1.1rem;
-    line-height: 1.8;
-    resize: none;
-    background-color: transparent;
-    color: var(--text-dark);
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: none;
+  background-color: transparent;
+  color: var(--text-dark, #111827);
+  display: block;
 }
-.notesArea textarea::placeholder {
-    color: var(--text-light);
-}
+
 .notesArea textarea:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px rgba(46, 71, 108, 0.2); 
+  outline: none;
+  background-color: rgba(0,0,0,0.01); /* Leve destaque ao focar */
 }
+
 .notesArea textarea:disabled {
-    background-color: var(--bg-light);
-    cursor: not-allowed;
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
-/* Caixa da Transcrição */
+/* ==================== BLOCO DA IA ==================== */
+.aiArea {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.aiButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  background-color: var(--primary-color, #0d9488);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.aiButton:hover:not(:disabled) {
+  background-color: #0f766e;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.aiButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aiSuggestionCard {
+  width: 100%;
+  min-height: 120px;
+  background-color: var(--bg-medium, #ffffff);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem 1.5rem;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-dark, #111827);
+  border-left: 5px solid var(--secondary-color, #f59e0b);
+  border-right: 1px solid var(--border-light, #e5e7eb);
+  border-top: 1px solid var(--border-light, #e5e7eb);
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+  white-space: pre-wrap; 
+}
+
+.aiPlaceholder {
+  color: var(--text-medium, #9ca3af);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.loadingText {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary-color, #0d9488);
+  font-weight: 500;
+}
+
+/* ==================== Transcrição ==================== */
 .transcriptionBox {
-    flex: 1; 
-    background-color: var(--bg-medium);
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-
-.transcriptionBox h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    color: var(--primary-color);
-}
-
 .transcriptionEditable {
-    flex: 1;
-    width: 100%;
-    min-height: 150px; 
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 1rem;
-    font-family: 'Georgia', serif;
-    font-size: 1rem;
-    line-height: 1.6;
-    resize: none;
-    background-color: transparent;
-    color: var(--text-dark);
-    transition: all 0.2s ease;
+  width: 100%;
+  min-height: 150px;
+  max-height: 300px;
+  background-color: var(--bg-medium, #ffffff);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 1rem 1.5rem;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-dark, #111827);
+  resize: vertical;
+  border: 1px solid var(--border-light, #e5e7eb);
+  overflow-y: auto;
 }
 .transcriptionEditable:focus {
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 1px var(--secondary-color);
-}
-.transcriptionEditable:disabled {
-    background-color: var(--bg-light);
-    cursor: not-allowed;
+  outline: none;
+  border-color: var(--primary-color, #0d9488);
 }
 
-/* Centraliza mensagens de carregamento/erro */
-.centeredMessage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-size: 1.5rem;
-    color: var(--text-medium);
-}
-
-/* ============================================== */
-/* ========= RESPONSIVIDADE PARA TABLETS E CELULARES (MAX 1024px) ========= */
-/* ============================================== */
-
+/* ==================== Responsividade ==================== */
 @media (max-width: 1024px) {
-    .sessionPage {
-        flex-direction: column; 
-        height: auto; 
-        overflow-y: auto; 
-    }
-    .sidebar {
-        width: 100%; 
-        height: auto; 
-        border-right: none;
-        border-bottom: 1px solid var(--border-light); 
-        padding: 1.5rem; 
-    }
-    .backButton {
-        align-self: flex-start; 
-        margin-bottom: 1rem;
-    }
-    .patientAvatar {
-        width: 90px;
-        height: 90px;
-        margin-bottom: 1rem;
-    }
-    .sidebar h2 {
-        font-size: 1.6rem;
-    }
-    .sidebar h2 + p {
-        margin-bottom: 1rem;
-    }
-    .sessionInfo {
-        padding-top: 1rem;
-    }
-    .mainContent {
-        padding: 1rem; 
-        height: auto;
-    }
-    .controlsBar {
-        flex-direction: column; 
-        padding: 1rem;
-        margin-bottom: 1rem;
-        align-items: flex-start; 
-        gap: 1rem;
-    }
-    .timerDisplay {
-        font-size: 2rem; 
-        width: 100%;
-        text-align: left;
-    }
-    .recordingControls {
-        width: 100%;
-        flex-wrap: wrap; 
-        gap: 0.75rem;
-        justify-content: space-between; 
-    }
-    .consent {
-        order: 3; 
-        width: 100%;
-        justify-content: flex-start; 
-        font-size: 0.9rem;
-    }
-    .actionButtons {
-        width: 100%; 
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-    .recordButton, 
-    .sessionButtonStart, 
-    .sessionButtonEnd,
-    .sessionButtonFinalize,
-    .sessionButtonPause
-    {
-        flex-grow: 1; 
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        justify-content: center; 
-    }
-    /* Garantindo consistência nos ícones responsivos */
-    .recordButton svg {
-        color: inherit;
-    }
-
-    .notesArea {
-        height: 50vh; 
-        min-height: 250px;
-        margin-bottom: 1rem;
-    }
-    .notesArea textarea {
-        font-size: 1rem; 
-        padding: 1rem;
-    }
-    .transcriptionBox {
-        min-height: 300px;
-    }
-    .transcriptionEditable {
-        min-height: 200px;
-    }
+  .sessionPage {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light, #e5e7eb);
+    flex-direction: row;
+    padding: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    overflow-y: hidden;
+  }
+  .patientAvatar {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0;
+  }
+  .mainContent {
+    padding: 1rem;
+    overflow-y: visible;
+  }
 }

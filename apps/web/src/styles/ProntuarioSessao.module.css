@@ -47,7 +47,7 @@
 }
 
 .btn {
-    background-color: #0D9488;
+    background-color: var(--primary-color, #00897b);
     color: white;
     border: none;
 }

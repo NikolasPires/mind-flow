@@ -7,39 +7,52 @@ import { Paciente } from "src/modules/user/entities/Paciente";
 import { UserRepository } from "src/modules/user/repositories/UserRepository";
 import { PrismaService } from "../prisma.service";
 import { PrismaUserMapper } from "../mappers/PrismaUserMapper";
+import { EncryptionService } from "src/modules/services/encryptionService";
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private userMapper: PrismaUserMapper,
+        private encryptionService: EncryptionService
+    ) {}
 
     async create(user: User, profile: Psicologo | Paciente): Promise<void> {
-        const userRaw = PrismaUserMapper.toPrisma(user);
+        const userRaw = this.userMapper.toPrisma(user);
+
+        const profilePaciente = profile as Paciente;
+        const profilePsicologo = profile as Psicologo;
 
         await this.prisma.user.create({
             data: {
                 ...userRaw,
                 psicologo: user.role === 'PSICOLOGO' ? {
                     create: {
-                        crp: (profile as Psicologo).crp,
-                        bio: (profile as Psicologo).bio,
+                        crp: this.encryptionService.encrypt(profilePsicologo.crp),
+                        bio: profilePsicologo.bio, 
+                        crpHash: profilePsicologo.crpHash,
                     }
                 } : undefined,
                 paciente: user.role === 'PACIENTE' ? {
                     create: {
-                        cpf: (profile as Paciente).cpf,
-                        gender: (profile as Paciente).gender,
+                        cpf: profilePaciente.cpf 
+                            ? this.encryptionService.encrypt(profilePaciente.cpf) 
+                            : null,
+                        gender: profilePaciente.gender,
+                        cpfHash: profilePaciente.cpfHash,
+                        psicologo_responsavel_id: profilePaciente.psicologo_responsavel_id,
                     }
                 } : undefined
             }
         });
     }
 
-    async findByEmail(email: string): Promise<User | null> {
+    async findByEmailHash(emailHash: string): Promise<User | null> {
         const user = await this.prisma.user.findUnique({
-            where: { email }
+            where: { emailHash }
         });
 
         if (!user) return null;
-        return PrismaUserMapper.toDomain(user);
+        return this.userMapper.toDomain(user);
     }
 }

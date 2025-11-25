@@ -5,6 +5,8 @@ import { useRouter } from 'next/router';
 import styles from '../styles/Sidebar.module.css';
 // Importação dos ícones que vamos usar
 import { FiHome, FiCalendar, FiUsers, FiBarChart2, FiSettings, FiMenu, FiX } from 'react-icons/fi'; // <--- Importar FiMenu e FiX
+import { signOut } from "next-auth/react";
+import { FiLogOut } from "react-icons/fi";
 
 interface SidebarProps {}
 
@@ -59,13 +61,13 @@ const Sidebar: React.FC<SidebarProps> = () => {
                 <span>Pacientes</span>
               </Link>
             </li>
-            {/* Relatórios */}
-            <li className={isActive('/relatorios') ? styles.active : ''}>
+            {/* Relatórios - Temporariamente oculto até implementação */}
+            {/* <li className={isActive('/relatorios') ? styles.active : ''}>
               <Link href="/relatorios" className={styles.navLink} onClick={handleLinkClick}>
                 <FiBarChart2 className={styles.icon} />
                 <span>Relatórios</span>
               </Link>
-            </li>
+            </li> */}
             {/* Configurações */}
             <li className={isActive('/configuracoes') ? styles.active : ''}>
               <Link href="/configuracoes" className={styles.navLink} onClick={handleLinkClick}>
@@ -75,7 +77,23 @@ const Sidebar: React.FC<SidebarProps> = () => {
             </li>
           </ul>
         </nav>
+                {/* Botão de Logout */}
+        <div className={styles.logoutContainer}>
+          <button
+            className={styles.logoutButton}
+            onClick={() => {
+              setIsOpen(false); // se estiver no mobile, fecha o menu
+              signOut({ callbackUrl: "/login" }); // redireciona para login
+            }}
+          >
+            <FiLogOut className={styles.icon} />
+            <span>Sair</span>
+          </button>
+        </div>
+
       </aside>
+  
+
     </>
   );
 };

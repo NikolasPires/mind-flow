@@ -150,7 +150,7 @@
     font-size: 1rem;
     cursor: pointer;
     border: none;
-    background-color: var(--secondary-color); 
+    background-color: var(--primary-color, #00897b); 
     color: white;
     transition: all 0.2s ease;
     height: 48px; /* Ajusta para a altura do input */
@@ -159,7 +159,7 @@
 }
 
 .changePasswordButton:hover {
-    background-color: #5579b6;
+    background-color: #00695c;
 }
 
 /* --- ESTILOS DE BOTÃO DE SALVAR (NO FINAL DO FORM) --- */
@@ -180,15 +180,15 @@
     cursor: pointer;
     border: none;
     transition: all 0.3s ease;
-    background-color: var(--primary-color); /* Azul Escuro */
+    background-color: var(--primary-color, #00897b);
     color: white;
     box-shadow: var(--shadow-md);
 }
 
 .saveButton:hover:not(:disabled) {
-    background-color: var(--secondary-color);
+    background-color: #00695c;
     transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(46, 71, 108, 0.3);
+    box-shadow: 0 6px 10px rgba(0, 137, 123, 0.3);
 }
 
 .saveButton:disabled {
@@ -245,11 +245,11 @@
 .modalButtonContainer .saveButton {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
-    background-color: var(--accent-color);
+    background-color: var(--primary-color, #00897b);
 }
 .modalButtonContainer .saveButton:hover:not(:disabled) {
-    background-color: #009999;
-    box-shadow: 0 4px 6px rgba(0, 102, 102, 0.3);
+    background-color: #00695c;
+    box-shadow: 0 4px 6px rgba(0, 137, 123, 0.3);
 }
 
 .successMessage {

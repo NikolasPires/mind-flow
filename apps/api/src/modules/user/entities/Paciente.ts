@@ -15,7 +15,8 @@ export enum PatientStatus {
 
 interface PacienteSchema {
     userId: string; 
-    cpf: string;
+    cpf: string | null;
+    cpfHash: string | null;
     gender: Gender;
     initial_observations: string | null;
     history: string | null;
@@ -30,6 +31,8 @@ export class Paciente {
         props: Replace<
             PacienteSchema, 
             { 
+                cpf?: string | null, 
+                cpfHash?: string | null,
                 initial_observations?: string | null,
                 history?: string | null,
                 status?: PatientStatus,
@@ -39,6 +42,8 @@ export class Paciente {
     ) {
         this.props = {
             ...props,
+            cpf: props.cpf ?? null,
+            cpfHash: props.cpfHash ?? null,
             initial_observations: props.initial_observations ?? null,
             history: props.history ?? null,
             status: props.status ?? PatientStatus.ATIVO,
@@ -48,8 +53,10 @@ export class Paciente {
 
     get userId(): string { return this.props.userId; }
     
-    get cpf(): string { return this.props.cpf; }
-    set cpf(cpf: string) { this.props.cpf = cpf; }
+    get cpf(): string | null { return this.props.cpf; }
+    set cpf(cpf: string | null) { this.props.cpf = cpf; }
+
+    get cpfHash(): string | null { return this.props.cpfHash; }
 
     get gender(): Gender { return this.props.gender; }
     set gender(gender: Gender) { this.props.gender = gender; }

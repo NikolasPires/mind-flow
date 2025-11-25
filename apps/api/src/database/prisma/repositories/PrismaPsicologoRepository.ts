@@ -6,15 +6,19 @@ import { PrismaPsicologoMapper } from "../mappers/PrismaPsicologoMapper";
 
 @Injectable()
 export class PrismaPsicologoRepository implements PsicologoRepository {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private mapper: PrismaPsicologoMapper,
 
-    async findByCrp(crp: string): Promise<Psicologo | null> {
+    ) {}
+
+    async findByCrpHash(crpHash: string): Promise<Psicologo | null> {
         const psicologo = await this.prisma.psicologo.findUnique({
-            where: { crp }
+            where: { crpHash }
         });
 
         if (!psicologo) return null;
-        return PrismaPsicologoMapper.toDomain(psicologo); 
+        return this.mapper.toDomain(psicologo); 
     }
     
 }

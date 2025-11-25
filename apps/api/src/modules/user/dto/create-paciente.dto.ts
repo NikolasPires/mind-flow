@@ -6,6 +6,6 @@ export class CreatePacienteBody {
     @IsEmail() email: string;
     @MinLength(6) password: string;
 
-    @IsNotEmpty() @IsString() cpf: string;
+    @IsString() cpf: string;
     @IsNotEmpty() @IsEnum(Gender) gender: Gender;
 }
