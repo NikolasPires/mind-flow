@@ -37,4 +37,7 @@ RUN npx prisma generate
 # Porta que o NestJS usa
 EXPOSE 3000
 
+# Aplica migrações
+RUN npx prisma migrate deploy
+
 CMD ["node", "dist/main.js"]
