@@ -80,7 +80,7 @@ interface FormFieldProps {
     label: string;
     name: string;
     icon: React.ElementType;
-    value: string | number | undefined; // 'undefined' permitido
+    value: string | number | null | undefined;
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     type?: string;
     disabled?: boolean;
