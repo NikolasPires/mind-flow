@@ -13,6 +13,7 @@ import { ListPacientesUseCase } from '../useCases/list-pacientes.use-case';
 import { GetPacienteProfileUseCase } from '../useCases/getUserUseCase/getPacienteUseCase';
 import { GetUserProfileUseCase } from '../useCases/getUserProfileUseCase/get-user-profile.use-case';
 import { UpdateUserProfileUseCase } from '../useCases/updateUserProfileUseCase/update-user-profile.use-case';
+import { PacienteService } from 'src/modules/paciente/paciente.service';
 
 @Controller('users')
 export class UserController {
@@ -24,6 +25,7 @@ export class UserController {
     private getPacienteProfileUseCase: GetPacienteProfileUseCase,
     private getUserProfileUseCase: GetUserProfileUseCase,
     private updateUserProfileUseCase: UpdateUserProfileUseCase,
+    private pacienteService: PacienteService,
   ) {}
 
   @Post('psicologo')
@@ -110,5 +112,14 @@ export class UserController {
         : undefined;
     const result = await this.updateUserProfileUseCase.execute(userId, userData, profileData);
     return result;
+  }
+  @Patch('paciente/:id') // Rota será: /users/paciente/ID_DO_PACIENTE
+  async updatePaciente(
+    @Param('id') id: string,
+    @Body() body: any // O ideal é usar um DTO específico (UpdatePacienteDto)
+  ) {
+    // Chama o service que você já me mostrou antes (que tem a lógica de criptografia)
+    // OBS: Você precisa garantir que o 'PacienteService' esteja injetado no construtor deste Controller
+    return this.pacienteService.updatePaciente(id, body);
   }
 }

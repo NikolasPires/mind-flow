@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 export interface Paciente {
-  id: string;
+  userId: string;
   name: string;
   email: string;
   photo_url: string | null;
@@ -95,9 +95,10 @@ export const pacienteService = {
     return response.data;
   },
 
-  async updatePaciente(id: string, data: Partial<Paciente>, token?: string) {
+ async updatePaciente(id: string, data: Partial<Paciente>, token?: string) {
     const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     const response = await api.patch(`/patients/${id}`, data, config);
+    
     return response.data;
   },
 

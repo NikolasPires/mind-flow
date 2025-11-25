@@ -1,0 +1,124 @@
+/* src/styles/EditPatientModal.module.css */
+
+.container {
+  padding: 1.5rem;
+  background-color: #fff;
+  /* Removemos sombras e larguras fixas que atrapalham o modal */
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.input,
+.select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  color: #111827;
+  background-color: #f9fafb;
+  width: 100%;
+  transition: all 0.2s;
+  /* Garante que o input seja clicável */
+  pointer-events: auto; 
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+  background-color: #fff;
+}
+
+/* Layout de duas colunas */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btnCancel {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnCancel:hover {
+  background-color: #f3f4f6;
+}
+
+.btnSave {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  background-color: #0f766e; /* Cor do seu tema */
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnSave:hover {
+  background-color: #0d635b;
+}
+
+.btnSave:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Responsividade */
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
