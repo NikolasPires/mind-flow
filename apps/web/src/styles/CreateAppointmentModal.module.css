@@ -1,0 +1,172 @@
+/* src/styles/CreateAppointmentModal.module.css */
+
+.container {
+  padding: 1rem;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.formGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #fafafa;
+  width: 100%;
+  box-sizing: border-box; /* Garante que o padding não estoure a largura */
+}
+
+.formGroup input::placeholder {
+  color: #aaa;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+}
+
+.formRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.formRow > .formGroup {
+  flex: 1;
+}
+
+/* --- Estilos específicos para a área de Tags --- */
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tagChip {
+  background-color: #e0f2f1; /* Um verde bem clarinho para combinar */
+  color: #0f766e;
+  padding: 0.3rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.removeTag {
+  cursor: pointer;
+  font-weight: bold;
+  opacity: 0.6;
+}
+
+.removeTag:hover {
+  opacity: 1;
+}
+
+.tagInputGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.addButton {
+  background-color: white;
+  border: 1px solid #0f766e;
+  color: #0f766e;
+  padding: 0 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  background-color: #f0fdfa;
+}
+
+/* --- Botões de Ação --- */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.submitButton {
+  background-color: #0f766e;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submitButton:hover {
+  background-color: #0d635b;
+}
+
+.submitButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+@media (max-width: 600px) {
+  .formRow {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
