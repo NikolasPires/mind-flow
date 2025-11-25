@@ -38,6 +38,7 @@ import { consultaService, Consulta } from '../services/consultaService';
 import { pacienteService, Paciente } from '../services/pacienteService';
 import { NextPageWithAuth } from '@/types/page-auth';
 import CreatePatientForm from '../components/CreatePatientForm';
+import CreateAppointmentModal from '../components/CreateAppointmentModal'; // <--- Import do novo modal
 
 interface Appointment {
   id: string | number;
@@ -65,18 +66,8 @@ const Agenda: NextPageWithAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [newConsulta, setNewConsulta] = useState({
-    paciente_id: '',
-    horario: '',
-    tipo: '',
-    categoria: '',
-    tags: [] as string[],
-    tagInput: '',
-  });
   
-  // Estados para edição
-  const [openEditModal, setOpenEditModal] = useState(false);
+ const [openEditModal, setOpenEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editConsulta, setEditConsulta] = useState({
     id: '',
@@ -88,23 +79,25 @@ const Agenda: NextPageWithAuth = () => {
     tagInput: '',
   });
 
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedOccurrenceDate, setSelectedOccurrenceDate] = useState<Date | null>(null);
+  
+  const [openCreatePatientModal, setOpenCreatePatientModal] = useState(false);
 
   // Carregar consultas da API
   useEffect(() => {
-    // Espera a sessão carregar completamente
     if (sessionStatus === 'loading') {
       setLoading(true);
       return;
     }
 
-    // Se não houver sessão após carregar, desativa loading
     if (sessionStatus === 'unauthenticated' || !session) {
       setLoading(false);
       setError('Você precisa estar autenticado para ver as consultas');
       return;
     }
 
-    // Se tiver sessão, carrega as consultas e pacientes
     if (sessionStatus === 'authenticated' && session) {
       loadConsultas();
       loadPacientes();
@@ -113,48 +106,30 @@ const Agenda: NextPageWithAuth = () => {
 
   const loadPacientes = async () => {
     if (!session) return;
-
     try {
       const token = session.accessToken as string;
-
-      if (!token) {
-        console.warn('Token não encontrado para carregar pacientes');
-        return;
-      }
-
       const data = await pacienteService.listPacientes(token);
       setPacientes(data);
     } catch (err: any) {
       console.error('Erro ao carregar pacientes:', err);
-      // Não mostra erro ao usuário, apenas log
       setPacientes([]);
     }
   };
 
   const loadConsultas = async () => {
-    if (!session) {
-      setError('Você precisa estar autenticado para carregar consultas');
-      setLoading(false);
-      return;
-    }
-
+    if (!session) return;
     try {
       setLoading(true);
       setError(null);
       const token = session.accessToken as string;
 
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
-      }
-
       const data = await consultaService.listConsultas(token);
       setConsultas(data);
 
-      // Converter consultas da API para o formato usado pela agenda
       const convertedAppointments: Appointment[] = data.map((consulta) => {
         const horario = new Date(consulta.horario);
         const startTime = horario.getHours();
-        const endTime = startTime + 1; // Assumindo duração de 1 hora por padrão
+        const endTime = startTime + 1; 
 
         const timeStr = `${startTime.toString().padStart(2, '0')}:00 - ${endTime.toString().padStart(2, '0')}:00`;
 
@@ -185,85 +160,14 @@ const Agenda: NextPageWithAuth = () => {
     }
   };
 
-  const handleCreateConsulta = async () => {
-    try {
-      setCreateLoading(true);
-      setError(null);
-
-      
-
-      // Validação mais robusta do paciente_id
-      if (!newConsulta.paciente_id || newConsulta.paciente_id.trim() === '' || newConsulta.paciente_id === 'undefined' || newConsulta.paciente_id === 'null') {
-        setError('Por favor, selecione um paciente');
-        setCreateLoading(false);
-        return;
-      }
-
-      if (!newConsulta.horario || !newConsulta.tipo || !newConsulta.categoria) {
-        setError('Preencha todos os campos obrigatórios');
-        setCreateLoading(false);
-        return;
-      }
-
-      const token = session?.accessToken as string;
-      const consultaData = {
-        paciente_id: String(newConsulta.paciente_id).trim(),
-        horario: newConsulta.horario,
-        tipo: newConsulta.tipo,
-        categoria: newConsulta.categoria,
-        tags: newConsulta.tags,
-      };
-
-
-      await consultaService.createConsulta(consultaData, token);
-
-      setOpenCreateModal(false);
-      setNewConsulta({
-        paciente_id: '',
-        horario: '',
-        tipo: '',
-        categoria: '',
-        tags: [],
-        tagInput: '',
-      });
-      await loadConsultas(); // Recarregar consultas
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar consulta');
-      console.error('Erro ao criar consulta:', err);
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const addTag = () => {
-    if (newConsulta.tagInput.trim() && !newConsulta.tags.includes(newConsulta.tagInput.trim())) {
-      setNewConsulta({
-        ...newConsulta,
-        tags: [...newConsulta.tags, newConsulta.tagInput.trim()],
-        tagInput: '',
-      });
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setNewConsulta({
-      ...newConsulta,
-      tags: newConsulta.tags.filter(t => t !== tag),
-    });
-  };
-
-  // Funções para editar consulta
   const handleOpenEditModal = (appointment: Appointment) => {
-    // Encontrar a consulta completa pelo id
     const consulta = consultas.find(c => c.id === appointment.id);
     if (consulta) {
-      // Converter o horário para o formato datetime-local
       const horarioDate = new Date(consulta.horario);
       const horarioLocal = new Date(horarioDate.getTime() - horarioDate.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 16);
       
-      // Encontrar o paciente_id correspondente
       const paciente = pacientes.find(p => p.name === appointment.patient);
       
       setEditConsulta({
@@ -276,7 +180,7 @@ const Agenda: NextPageWithAuth = () => {
         tagInput: '',
       });
       setOpenEditModal(true);
-      setOpenModal(false); // Fechar modal de detalhes
+      setOpenModal(false);
     }
   };
 
@@ -284,18 +188,6 @@ const Agenda: NextPageWithAuth = () => {
     try {
       setEditLoading(true);
       setError(null);
-
-      if (!editConsulta.paciente_id || editConsulta.paciente_id.trim() === '' || editConsulta.paciente_id === 'undefined' || editConsulta.paciente_id === 'null') {
-        setError('Por favor, selecione um paciente');
-        setEditLoading(false);
-        return;
-      }
-
-      if (!editConsulta.horario || !editConsulta.tipo || !editConsulta.categoria) {
-        setError('Preencha todos os campos obrigatórios');
-        setEditLoading(false);
-        return;
-      }
 
       const token = session?.accessToken as string;
       const consultaData = {
@@ -309,38 +201,11 @@ const Agenda: NextPageWithAuth = () => {
       await consultaService.updateConsulta(editConsulta.id, consultaData, token);
 
       setOpenEditModal(false);
-      setEditConsulta({
-        id: '',
-        paciente_id: '',
-        horario: '',
-        tipo: '',
-        categoria: '',
-        tags: [],
-        tagInput: '',
-      });
-      await loadConsultas(); // Recarregar consultas
+      await loadConsultas();
     } catch (err: any) {
       setError(err.message || 'Erro ao atualizar consulta');
-      console.error('Erro ao atualizar consulta:', err);
     } finally {
       setEditLoading(false);
-    }
-  };
-
-  const handleDeleteConsulta = async (appointmentId: string | number) => {
-    if (!confirm('Tem certeza que deseja excluir este agendamento?')) {
-      return;
-    }
-
-    try {
-      setError(null);
-      const token = session?.accessToken as string;
-      await consultaService.deleteConsulta(String(appointmentId), token);
-      setOpenModal(false); // Fechar modal de detalhes
-      await loadConsultas(); // Recarregar consultas
-    } catch (err: any) {
-      setError(err.message || 'Erro ao excluir consulta');
-      console.error('Erro ao excluir consulta:', err);
     }
   };
 
@@ -361,18 +226,27 @@ const Agenda: NextPageWithAuth = () => {
     });
   };
 
-  // Modal state
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedOccurrenceDate, setSelectedOccurrenceDate] = useState<Date | null>(null);
-  const [openCreatePatientModal, setOpenCreatePatientModal] = useState(false);
+  // --- LÓGICA DE EXCLUSÃO ---
+  const handleDeleteConsulta = async (appointmentId: string | number) => {
+    if (!confirm('Tem certeza que deseja excluir este agendamento?')) {
+      return;
+    }
+    try {
+      setError(null);
+      const token = session?.accessToken as string;
+      await consultaService.deleteConsulta(String(appointmentId), token);
+      setOpenModal(false);
+      await loadConsultas();
+    } catch (err: any) {
+      setError(err.message || 'Erro ao excluir consulta');
+    }
+  };
 
   const handlePatientCreated = async () => {
     await loadPacientes();
     setOpenCreatePatientModal(false);
   };
 
-  // Handlers do modal
   const handleOpenModal = (appointment: Appointment, occurrenceDate?: Date) => {
     setSelectedAppointment(appointment);
     setSelectedOccurrenceDate(occurrenceDate ?? null);
@@ -385,22 +259,20 @@ const Agenda: NextPageWithAuth = () => {
     setSelectedOccurrenceDate(null);
   };
 
-  // Função para obter o nome do dia da semana
+  // Funções de Data/Calendário
   const getDayName = (dayIndex: number) => {
     const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
     return days[dayIndex];
   };
 
-  // retorna segunda-feira (início da semana) para uma dada data
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
-    const diffToMonday = (d.getDay() + 6) % 7; // 0=Dom -> 6, 1=Seg ->0
+    const diffToMonday = (d.getDay() + 6) % 7;
     d.setDate(d.getDate() - diffToMonday);
     d.setHours(0, 0, 0, 0);
     return d;
   };
 
-  // Função para obter a data do dia (apenas dia do mês, usada no cabeçalho do grid)
   const getDayDate = (dayIndex: number) => {
     const start = getWeekStart(currentDate);
     const date = new Date(start);
@@ -408,7 +280,6 @@ const Agenda: NextPageWithAuth = () => {
     return date.getDate();
   };
 
-  // Função para obter o mês e ano (texto do cabeçalho)
   const getMonthYear = () => {
     const start = getWeekStart(currentDate);
     const end = new Date(start);
@@ -426,46 +297,27 @@ const Agenda: NextPageWithAuth = () => {
     return `${startLabel} - ${endLabel}, ${year}`;
   };
 
-  // Navega entre semanas
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentDate(newDate);
   };
 
-  // Obter agendamentos do dia (index 0..6)
-  const getAppointmentsForDay = (dayIndex: number) => {
-    const weekStart = getWeekStart(currentDate);
-    return appointments.filter(appointment => {
-      const appointmentDate = new Date(appointment.dataDaConsulta);
-      const apDayIndex = (appointmentDate.getDay() + 6) % 7; // segunda = 0
-      return apDayIndex === dayIndex && appointmentDate >= weekStart && appointmentDate < new Date(weekStart.getTime() + 7 * 86400000);
-    });
-  };
+  const getAppointmentPosition = (startTime: number) => (startTime - 9) * 60;
+  const getAppointmentHeight = (startTime: number, endTime: number) => (endTime - startTime) * 60;
 
-  // Posição vertical/altura (corrigido para iniciar em 08:00)
-  const getAppointmentPosition = (startTime: number) => {
-    return (startTime - 9) * 60; // 08:00 = top 0
-  };
-  const getAppointmentHeight = (startTime: number, endTime: number) => {
-    return (endTime - startTime) * 60;
-  };
-
-  // Gera próximas consultas para os próximos N dias, agrupadas por data
   const getUpcomingAppointments = (daysAhead = 21) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // precria o mapa de dias futuros
     const map: Record<string, { date: Date; items: Appointment[] }> = {};
     for (let i = 0; i < daysAhead; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      const key = d.toISOString().slice(0, 10);
       map[key] = { date: d, items: [] };
     }
 
-    // percorre os agendamentos reais e coloca no dia correspondente (comparando date local)
     appointments.forEach(apt => {
       const apDate = new Date(apt.dataDaConsulta);
       apDate.setHours(0, 0, 0, 0);
@@ -475,8 +327,7 @@ const Agenda: NextPageWithAuth = () => {
       }
     });
 
-    // transforma em array ordenado e ordena itens por hora de início
-    const entries = Object.keys(map)
+    return Object.keys(map)
       .filter(k => map[k].items.length > 0)
       .sort()
       .map(k => ({
@@ -484,12 +335,9 @@ const Agenda: NextPageWithAuth = () => {
         day: map[k].date,
         items: map[k].items.sort((a: any, b: any) => (a.startTime ?? 0) - (b.startTime ?? 0))
       }));
-
-    return entries;
   };
 
-  const upcoming = getUpcomingAppointments(21); // próximos 21 dias
-
+  const upcoming = getUpcomingAppointments(21);
 
   if (loading) {
     return (
@@ -510,7 +358,7 @@ const Agenda: NextPageWithAuth = () => {
           </Alert>
         )}
 
-        {/* Header da Agenda: título + nav de semana + botão agendar */}
+        {/* Header da Agenda */}
         <Box className={styles.headerSection}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
@@ -552,14 +400,14 @@ const Agenda: NextPageWithAuth = () => {
                   </Button>
 
                   <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setOpenCreateModal(true)}
-                  sx={{
-                    backgroundColor: 'var(--primary-color, #00897b)',
-                    '&:hover': { backgroundColor: '#00695c' },
-                    minWidth: isMobile ? '100%' : 'auto',
-                  }}
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={() => setOpenCreateModal(true)} // Abre o novo modal
+                    sx={{
+                      backgroundColor: 'var(--primary-color, #00897b)',
+                      '&:hover': { backgroundColor: '#00695c' },
+                      minWidth: isMobile ? '100%' : 'auto',
+                    }}
                   >
                     {isMobile ? 'Agendar' : 'Agendar Nova Sessão'}
                   </Button>
@@ -569,7 +417,7 @@ const Agenda: NextPageWithAuth = () => {
           </Grid>
         </Box>
 
-        {/* Grid do Calendário (sempre semanal) */}
+        {/* Grid do Calendário */}
         <Paper className={styles.calendarGrid}>
           <Grid container>
             {/* Eixo de tempo */}
@@ -633,9 +481,8 @@ const Agenda: NextPageWithAuth = () => {
                     return appointmentDate >= weekStart && appointmentDate < new Date(weekStart.getTime() + 7 * 86400000);
                   })
                   .map((appointment) => {
-                    const weekStart = getWeekStart(currentDate);
                     const appointmentDate = new Date(appointment.dataDaConsulta);
-                    const dayIndex = (appointmentDate.getDay() + 6) % 7; // Ajusta para segunda como 0
+                    const dayIndex = (appointmentDate.getDay() + 6) % 7;
 
                     return (
                       <Paper
@@ -649,25 +496,9 @@ const Agenda: NextPageWithAuth = () => {
                           cursor: 'pointer',
                         }}
                         onClick={() => handleOpenModal(appointment, appointmentDate)}
-                        role="button"
-                        tabIndex={0}
                       >
-                        <Box sx={{ 
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          width: '100%'
-                        }}>
-                          <Typography 
-                            className={styles.appointmentPatient}
-                            sx={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              width: '100%',
-                              maxWidth: '100%'
-                            }}
-                          >
+                        <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                          <Typography className={styles.appointmentPatient} sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', maxWidth: '100%' }}>
                             {appointment.patient}
                           </Typography>
                         </Box>
@@ -679,7 +510,7 @@ const Agenda: NextPageWithAuth = () => {
           </Grid>
         </Paper>
 
-        {/* Lista de próximas consultas (agrupadas por dia) */}
+        {/* Lista de próximas consultas */}
         <Box mt={4}>
           <Typography variant="h6" gutterBottom>Próximas consultas</Typography>
           <Divider />
@@ -719,7 +550,6 @@ const Agenda: NextPageWithAuth = () => {
         </Box>
       </Container>
 
-      {/* Modal com informações detalhadas (categoria e tags ocultas nos cards) */}
       <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="sm">
         <DialogTitle>Detalhes do Agendamento</DialogTitle>
         <DialogContent dividers>
@@ -755,7 +585,7 @@ const Agenda: NextPageWithAuth = () => {
               <Chip label={selectedAppointment.status} color={selectedAppointment.statusColor as any} size="small" />
             </Stack>
           ) : null}
-                </DialogContent>
+        </DialogContent>
         <DialogActions sx={{ px: 3, py: 2, gap: 1.5 }}>
           <Button
             onClick={() => selectedAppointment && handleDeleteConsulta(selectedAppointment.id)}
@@ -796,383 +626,34 @@ const Agenda: NextPageWithAuth = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal para criar nova consulta */}
-      <Dialog
+      <CreateAppointmentModal 
         open={openCreateModal}
-        onClose={() => {
+        onClose={() => setOpenCreateModal(false)}
+        onSuccess={() => {
+          loadConsultas(); // Recarrega a lista após criar
           setOpenCreateModal(false);
-          // Resetar formulário quando fechar
-          setNewConsulta({
-            paciente_id: '',
-            horario: '',
-            tipo: '',
-            categoria: '',
-            tags: [],
-            tagInput: '',
-          });
         }}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            marginLeft: { xs: 0, md: '250px' },
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            fontSize: { xs: '1.5rem', sm: '1.75rem' },
-            fontWeight: 600,
-            pb: 2,
-          }}
-        >
-          Criar Nova Consulta
-        </DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={3.5} sx={{ mt: 1, px: { xs: 0, sm: 1 } }}>
-            <FormControl fullWidth required>
-              <InputLabel
-                id="paciente-select-label"
-                shrink={!!newConsulta.paciente_id}
-                sx={{
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                Paciente
-              </InputLabel>
-              <Select
-                labelId="paciente-select-label"
-                id="paciente-select"
-                value={newConsulta.paciente_id || ''}
-                onChange={(e) => {
-                  const selectedValue = e.target.value;
-                  if (selectedValue !== undefined && selectedValue !== null) {
-                    setNewConsulta((prev) => ({
-                      ...prev,
-                      paciente_id: String(selectedValue),
-                    }));
-                  }
-                }}
-                label="Paciente"
-                disabled={pacientes.length === 0}
-                notched
-                sx={{
-                  fontSize: '1rem',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                    py: 1.5,
-                  },
-                }}
-              >
-                {pacientes.length === 0 ? (
-                  <MenuItem disabled value="">
-                    <em>Nenhum paciente cadastrado</em>
-                  </MenuItem>
-                ) : (
-                  pacientes.map((patient) => (
-                    <MenuItem
-                      key={patient.id}
-                      value={String(patient.id)}
-                      sx={{ fontSize: '1rem' }}
-                    >
-                      {patient.name}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-              {pacientes.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1.5, fontSize: '0.875rem' }}
-                >
-                  Você precisa cadastrar pacientes antes de criar uma consulta.
-                </Typography>
-              )}
-            </FormControl>
+      />
 
-            <TextField
-              label="Data e Horário"
-              type="datetime-local"
-              value={newConsulta.horario}
-              onChange={(e) => setNewConsulta({ ...newConsulta, horario: e.target.value })}
-              fullWidth
-              required
-              InputLabelProps={{
-                shrink: true,
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                  py: 1.5,
-                  '&::-webkit-calendar-picker-indicator': {
-                    cursor: 'pointer',
-                    fontSize: '1.2rem',
-                    marginRight: { xs: 0, sm: 1 },
-                  },
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
-            />
-
-            <TextField
-              label="Tipo"
-              value={newConsulta.tipo}
-              onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })}
-              fullWidth
-              required
-              placeholder="Ex: Terapia Online, Terapia Presencial"
-              InputLabelProps={{
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
-            />
-
-            <TextField
-              label="Categoria"
-              value={newConsulta.categoria}
-              onChange={(e) => setNewConsulta({ ...newConsulta, categoria: e.target.value })}
-              fullWidth
-              required
-              placeholder="Ex: Consulta inicial, Acompanhamento"
-              InputLabelProps={{
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
-            />
-
-            <Box>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  mb: 1.5,
-                }}
-              >
-                Tags
-              </Typography>
-              {newConsulta.tags.length > 0 && (
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  flexWrap="wrap"
-                  sx={{ mb: 2 }}
-                >
-                  {newConsulta.tags.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      onDelete={() => removeTag(tag)}
-                      size="medium"
-                      sx={{
-                        fontSize: '0.875rem',
-                        height: '32px',
-                      }}
-                    />
-                  ))}
-                </Stack>
-              )}
-              <Stack direction="row" spacing={1.5}>
-                <TextField
-                  placeholder="Adicionar tag"
-                  value={newConsulta.tagInput}
-                  onChange={(e) => setNewConsulta({ ...newConsulta, tagInput: e.target.value })}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                  fullWidth
-                  inputProps={{
-                    sx: {
-                      fontSize: '1rem',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      fontSize: '1rem',
-                    },
-                  }}
-                />
-                <Button
-                  onClick={addTag}
-                  variant="outlined"
-                  sx={{
-                    fontSize: '0.875rem',
-                    px: 3,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Adicionar
-                </Button>
-              </Stack>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            px: 3,
-            py: 2,
-            gap: 1.5,
-          }}
-        >
-          <Button
-            onClick={() => setOpenCreateModal(false)}
-            disabled={createLoading}
-            sx={{
-              fontSize: '0.9375rem',
-              px: 3,
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleCreateConsulta}
-            variant="contained"
-            disabled={createLoading}
-            sx={{
-              fontSize: '0.9375rem',
-              px: 3,
-              minWidth: 140,
-            }}
-          >
-            {createLoading ? <CircularProgress size={24} /> : 'Criar Consulta'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal para editar consulta */}
       <Dialog
         open={openEditModal}
-        onClose={() => {
-          setOpenEditModal(false);
-          setEditConsulta({
-            id: '',
-            paciente_id: '',
-            horario: '',
-            tipo: '',
-            categoria: '',
-            tags: [],
-            tagInput: '',
-          });
-        }}
+        onClose={() => setOpenEditModal(false)}
         fullWidth
         maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            marginLeft: { xs: 0, md: '250px' },
-          },
-        }}
       >
-        <DialogTitle
-          sx={{
-            fontSize: { xs: '1.5rem', sm: '1.75rem' },
-            fontWeight: 600,
-            pb: 2,
-          }}
-        >
-          Editar Consulta
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Editar Consulta</DialogTitle>
         <DialogContent dividers>
-          <Stack spacing={3.5} sx={{ mt: 1, px: { xs: 0, sm: 1 } }}>
-            <FormControl fullWidth required>
-              <InputLabel
-                id="edit-paciente-select-label"
-                shrink={!!editConsulta.paciente_id}
-                sx={{
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                }}
-              >
-                Paciente
-              </InputLabel>
+          <Stack spacing={3.5} sx={{ mt: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Paciente</InputLabel>
               <Select
-                labelId="edit-paciente-select-label"
-                id="edit-paciente-select"
                 value={editConsulta.paciente_id || ''}
-                onChange={(e) => {
-                  const selectedValue = e.target.value;
-                  if (selectedValue !== undefined && selectedValue !== null) {
-                    setEditConsulta((prev) => ({
-                      ...prev,
-                      paciente_id: String(selectedValue),
-                    }));
-                  }
-                }}
+                onChange={(e) => setEditConsulta({ ...editConsulta, paciente_id: e.target.value })}
                 label="Paciente"
-                disabled={pacientes.length === 0}
-                notched
-                sx={{
-                  fontSize: '1rem',
-                  '& .MuiSelect-select': {
-                    fontSize: '1rem',
-                    py: 1.5,
-                  },
-                }}
               >
-                {pacientes.length === 0 ? (
-                  <MenuItem disabled value="">
-                    <em>Nenhum paciente cadastrado</em>
-                  </MenuItem>
-                ) : (
-                  pacientes.map((patient) => (
-                    <MenuItem
-                      key={patient.id}
-                      value={String(patient.id)}
-                      sx={{ fontSize: '1rem' }}
-                    >
-                      {patient.name}
-                    </MenuItem>
-                  ))
-                )}
+                {pacientes.map((patient) => (
+                  <MenuItem key={patient.id} value={String(patient.id)}>{patient.name}</MenuItem>
+                ))}
               </Select>
             </FormControl>
 
@@ -1182,32 +663,7 @@ const Agenda: NextPageWithAuth = () => {
               value={editConsulta.horario}
               onChange={(e) => setEditConsulta({ ...editConsulta, horario: e.target.value })}
               fullWidth
-              required
-              InputLabelProps={{
-                shrink: true,
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                  py: 1.5,
-                  '&::-webkit-calendar-picker-indicator': {
-                    cursor: 'pointer',
-                    fontSize: '1.2rem',
-                    marginRight: { xs: 0, sm: 1 },
-                  },
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
+              InputLabelProps={{ shrink: true }}
             />
 
             <TextField
@@ -1215,26 +671,6 @@ const Agenda: NextPageWithAuth = () => {
               value={editConsulta.tipo}
               onChange={(e) => setEditConsulta({ ...editConsulta, tipo: e.target.value })}
               fullWidth
-              required
-              placeholder="Ex: Terapia Online, Terapia Presencial"
-              InputLabelProps={{
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
             />
 
             <TextField
@@ -1242,58 +678,14 @@ const Agenda: NextPageWithAuth = () => {
               value={editConsulta.categoria}
               onChange={(e) => setEditConsulta({ ...editConsulta, categoria: e.target.value })}
               fullWidth
-              required
-              placeholder="Ex: Consulta inicial, Acompanhamento"
-              InputLabelProps={{
-                sx: {
-                  fontSize: '1rem',
-                  '&.MuiInputLabel-shrink': {
-                    fontSize: '1rem',
-                  },
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: '1rem',
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1rem',
-                },
-              }}
             />
 
             <Box>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{
-                  fontSize: '1rem',
-                  fontWeight: 500,
-                  mb: 1.5,
-                }}
-              >
-                Tags
-              </Typography>
+              <Typography variant="subtitle1" gutterBottom>Tags</Typography>
               {editConsulta.tags.length > 0 && (
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  flexWrap="wrap"
-                  sx={{ mb: 2 }}
-                >
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
                   {editConsulta.tags.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      onDelete={() => removeEditTag(tag)}
-                      size="medium"
-                      sx={{
-                        fontSize: '0.875rem',
-                        height: '32px',
-                      }}
-                    />
+                    <Chip key={tag} label={tag} onDelete={() => removeEditTag(tag)} />
                   ))}
                 </Stack>
               )}
@@ -1302,76 +694,23 @@ const Agenda: NextPageWithAuth = () => {
                   placeholder="Adicionar tag"
                   value={editConsulta.tagInput}
                   onChange={(e) => setEditConsulta({ ...editConsulta, tagInput: e.target.value })}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addEditTag();
-                    }
-                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEditTag())}
                   fullWidth
-                  inputProps={{
-                    sx: {
-                      fontSize: '1rem',
-                    },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      fontSize: '1rem',
-                    },
-                  }}
                 />
-                <Button
-                  onClick={addEditTag}
-                  variant="outlined"
-                  sx={{
-                    fontSize: '0.875rem',
-                    px: 3,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Adicionar
-                </Button>
+                <Button onClick={addEditTag} variant="outlined">Adicionar</Button>
               </Stack>
             </Box>
           </Stack>
         </DialogContent>
-        <DialogActions
-          sx={{
-            px: 3,
-            py: 2,
-            gap: 1.5,
-          }}
-        >
-          <Button
-            onClick={() => setOpenEditModal(false)}
-            disabled={editLoading}
-            sx={{
-              fontSize: '0.9375rem',
-              px: 3,
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleUpdateConsulta}
-            variant="contained"
-            disabled={editLoading}
-            sx={{
-              fontSize: '0.9375rem',
-              px: 3,
-              minWidth: 140,
-            }}
-          >
-            {editLoading ? <CircularProgress size={24} /> : 'Salvar Alterações'}
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setOpenEditModal(false)} disabled={editLoading}>Cancelar</Button>
+          <Button onClick={handleUpdateConsulta} variant="contained" disabled={editLoading}>
+            {editLoading ? <CircularProgress size={24} /> : 'Salvar'}
           </Button>
         </DialogActions>
       </Dialog>
     </div>
   );
 };
-
-// Agenda.auth = {
-//   isProtected: true,
-// };
 
 export default Agenda;

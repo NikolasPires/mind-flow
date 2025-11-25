@@ -19,9 +19,10 @@ import { CreatePacienteUseCase } from "./useCases/createUserUseCase/create-pacie
 import { GetUserProfileUseCase } from "./useCases/getUserProfileUseCase/get-user-profile.use-case";
 import { UpdateUserProfileUseCase } from "./useCases/updateUserProfileUseCase/update-user-profile.use-case";
 import { CloudinaryService } from "../services/cloudinaryService";
+import { PacienteModule } from "../paciente/paciente.module";
 
 @Module({
-    imports: [DatabaseModule],
+    imports: [DatabaseModule,PacienteModule],
     controllers: [UserController],
     providers: [
         CreatePsicologoUseCase,
